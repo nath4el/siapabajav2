@@ -249,164 +249,109 @@
     </form>
 
     {{-- TABLE CARD --}}
-    <div class="pbj-card">
-      <table class="pbj-table" style="table-layout:fixed; width:100%;">
-        <thead>
-          <tr>
-            <th style="width:90px;">Tahun</th>
-            <th style="width:180px;">Unit Kerja</th>
-            <th>Nama Pekerjaan</th>
-            <th style="width:180px;">Metode PBJ</th> <!-- ✅ TAMBAH INI -->
-            <th style="width:200px;">
-              <span class="pbj-th-sort">
-                Nilai Kontrak
-                <button type="button" class="pbj-sort-btn" id="sortNilaiBtn" title="Urutkan Nilai Kontrak">
-                  <i class="bi bi-arrow-down-up" id="sortNilaiIcon"></i>
-                </button>
-              </span>
-            </th>
-
-            <th style="width:140px;">Status Arsip</th>
-            <th style="width:180px;">Status Pekerjaan</th>
-            <th class="pbj-col-action" style="width:90px;">Aksi</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          @foreach($arsips as $a)
-            @php
-              $nilaiText = $rupiah($a->nilai_kontrak ?? null);
-              $unitName = $a->unit?->nama ?? '-';
-
-              $payload = [
-                'title'   => $a->nama_pekerjaan ?? '-',
-                'unit'    => $unitName,
-                'tahun'   => $a->tahun ?? '-',
-                'idrup'   => $a->id_rup ?? '-',
-                'status'  => $a->status_pekerjaan ?? '-',
-                'rekanan' => $a->nama_rekanan ?? '-',
-                'jenis'   => $a->jenis_pengadaan ?? '-',
-                'pagu'    => $rupiah($a->pagu_anggaran),
-                'hps'     => $rupiah($a->hps),
-                'kontrak' => $rupiah($a->nilai_kontrak),
-                'docnote' => buildDocNoteForLanding($a),
-                'docs'    => buildDokumenListForLanding($a),
-              ];
-            @endphp
-
-            <tr>
-              <td>{{ $a->tahun ?? '-' }}</td>
-
-              <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                {{ $a->unit?->nama ?? '-' }}
-              </td>
-
-              <td class="pbj-job">
-                <div class="pbj-job-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                  {{ $a->nama_pekerjaan ?? '-' }}
-                </div>
-              </td>
-
-              <td class="pbj-metode">
-                <span class="metode-badge">
-                  {{ $a->metode_pbj ?? $a->jenis_pengadaan ?? $a->metode ?? '-' }}
-                </span>
-              </td>
-
-              <td class="pbj-money">{{ $nilaiText }}</td>
-
-              <td>
-                <span class="pbj-arsip">
-                  <i class="bi bi-eye"></i> Publik
-                </span>
-              </td>
-
-              <td>
-                <span class="{{ chipClass($a->status_pekerjaan ?? '') }}">{{ $a->status_pekerjaan ?? '-' }}</span>
-              </td>
-
-              <td class="pbj-col-action">
-                <button type="button" class="pbj-link pbj-detail-btn" onclick='openDetailModal(@json($payload))'>
-                  Detail
-                </button>
-              </td>
-            </tr>
-          @endforeach
-
-          @if($totalRows === 0)
-            <tr>
-              <td colspan="8" style="text-align:center; padding:22px;">
-                Tidak ada data arsip publik yang sesuai filter.
-              </td>
-            </tr>
-          @endif
-        </tbody>
-      </table>
-
-      {{-- ✅ PAGINATION (SAMA konsep Home/pbj) --}}
-      <div class="pbj-foot">
-        <div class="pbj-foot-left" id="pbjFootText">
-          Halaman {{ $arsips->currentPage() }} dari {{ $arsips->lastPage() }}
-          • Menampilkan {{ $arsips->count() ? $arsips->firstItem() : 0 }}–{{ $arsips->count() ? $arsips->lastItem() : 0 }}
-          dari {{ $arsips->total() }} data
-        </div>
-
-        <div class="pbj-pager">
-          @php
-            $current = $arsips->currentPage();
-            $last    = $arsips->lastPage();
-            $start   = max(1, $current - 2);
-            $end     = min($last, $current + 2);
-
-            $prevHref = $arsips->onFirstPage()
-              ? '#'
-              : $arsips->appends($qs)->url($current - 1);
-
-            $nextHref = $arsips->hasMorePages()
-              ? $arsips->appends($qs)->url($current + 1)
-              : '#';
-          @endphp
-
-          <a class="pbj-page-btn {{ $arsips->onFirstPage() ? 'is-disabled' : '' }}"
-             href="{{ $prevHref }}"
-             aria-disabled="{{ $arsips->onFirstPage() ? 'true' : 'false' }}"
-             @if($arsips->onFirstPage()) onclick="return false;" @endif
-          >
-            <i class="bi bi-chevron-left"></i>
-          </a>
-
-          @if($start > 1)
-            <a class="pbj-page-btn" href="{{ $arsips->appends($qs)->url(1) }}">1</a>
-            @if($start > 2)
-              <span class="pbj-page-btn is-ellipsis" aria-hidden="true">…</span>
-            @endif
-          @endif
-
-          @for($i = $start; $i <= $end; $i++)
-            <a class="pbj-page-btn {{ $i === $current ? 'is-active' : '' }}"
-               href="{{ $arsips->appends($qs)->url($i) }}">
-              {{ $i }}
-            </a>
-          @endfor
-
-          @if($end < $last)
-            @if($end < $last - 1)
-              <span class="pbj-page-btn is-ellipsis" aria-hidden="true">…</span>
-            @endif
-            <a class="pbj-page-btn" href="{{ $arsips->appends($qs)->url($last) }}">{{ $last }}</a>
-          @endif
-
-          <a class="pbj-page-btn {{ $arsips->hasMorePages() ? '' : 'is-disabled' }}"
-             href="{{ $nextHref }}"
-             aria-disabled="{{ $arsips->hasMorePages() ? 'false' : 'true' }}"
-             @if(!$arsips->hasMorePages()) onclick="return false;" @endif
-          >
-            <i class="bi bi-chevron-right"></i>
-          </a>
-        </div>
+  <div class="pbj-card">
+    <div class="pbj-tbl-head">
+      <div class="pbj-col pbj-col-tahun">Tahun</div>
+      <div class="pbj-col pbj-col-unit">Unit Kerja</div>
+      <div class="pbj-col pbj-col-job">Nama Pekerjaan</div>
+      <div class="pbj-col pbj-col-metode">Metode PBJ</div>
+      <div class="pbj-col pbj-col-nilai">
+        <span>Nilai Kontrak</span>
+        <button type="button" class="pbj-sort-btn" id="sortNilaiBtn" title="Urutkan">
+          <i class="bi bi-arrow-down-up" id="sortNilaiIcon"></i>
+        </button>
       </div>
+      <div class="pbj-col pbj-col-status">Status Pekerjaan</div>
+      <div class="pbj-col pbj-col-aksi">Aksi</div>
     </div>
 
+    @forelse($arsips as $a)
+      @php
+        $nilaiText = $rupiah($a->nilai_kontrak ?? null);
+        $unitName  = $a->unit?->nama ?? '-';
+        $sp        = strtolower(trim((string)($a->status_pekerjaan ?? '')));
+        $spClass   = match($sp) {
+          'perencanaan' => 'sp-badge sp-plan',
+          'pemilihan'   => 'sp-badge sp-select',
+          'pelaksanaan' => 'sp-badge sp-do',
+          'selesai'     => 'sp-badge sp-done',
+          default       => 'sp-badge',
+        };
+        $nilaiRaw = preg_replace('/[^\d]/', '', (string)($a->nilai_kontrak ?? ''));
+
+        $payload = [
+          'title'   => $a->nama_pekerjaan ?? '-',
+          'unit'    => $unitName,
+          'tahun'   => $a->tahun ?? '-',
+          'idrup'   => $a->id_rup ?? '-',
+          'status'  => $a->status_pekerjaan ?? '-',
+          'rekanan' => $a->nama_rekanan ?? '-',
+          'jenis'   => $a->jenis_pengadaan ?? '-',
+          'pagu'    => $rupiah($a->pagu_anggaran),
+          'hps'     => $rupiah($a->hps),
+          'kontrak' => $rupiah($a->nilai_kontrak),
+          'metode'  => $a->metode_pbj ?? $a->metode_pengadaan ?? $a->metode ?? $a->jenis_pengadaan ?? '-',
+          'docnote' => buildDocNoteForLanding($a),
+          'docs'    => buildDokumenListForLanding($a),
+        ];
+      @endphp
+
+      <div class="pbj-tbl-row" data-moneyraw="{{ $nilaiRaw }}">
+        <div class="pbj-col pbj-col-tahun">{{ $a->tahun ?? '-' }}</div>
+        <div class="pbj-col pbj-col-unit">{{ $unitName }}</div>
+        <div class="pbj-col pbj-col-job">{{ $a->nama_pekerjaan ?? '-' }}</div>
+        <div class="pbj-col pbj-col-metode">
+          <span class="metode-badge">{{ $a->metode_pbj ?? $a->jenis_pengadaan ?? $a->metode ?? '-' }}</span>
+        </div>
+        <div class="pbj-col pbj-col-nilai">{{ $nilaiText }}</div>
+        <div class="pbj-col pbj-col-status">
+          <span class="{{ $spClass }}">{{ $a->status_pekerjaan ?? '-' }}</span>
+        </div>
+        <div class="pbj-col pbj-col-aksi">
+          <button type="button" class="aksi-btn aksi-info" onclick='openDetailModal(@json($payload))' title="Detail">
+            <i class="bi bi-info-circle-fill"></i>
+          </button>
+        </div>
+      </div>
+    @empty
+      <div style="text-align:center; padding:32px; color:#94a3b8;">
+        Tidak ada data arsip publik yang sesuai filter.
+      </div>
+    @endforelse
+
+    <div class="pbj-foot">
+      <div class="pbj-foot-left">
+        Halaman {{ $arsips->currentPage() }} dari {{ $arsips->lastPage() }}
+        &bull; Menampilkan {{ $arsips->count() }} dari {{ $arsips->total() }} data
+      </div>
+      <div class="pbj-pager">
+        @php
+          $current  = $arsips->currentPage();
+          $last     = $arsips->lastPage();
+          $start    = max(1, $current - 2);
+          $end      = min($last, $current + 2);
+          $prevHref = $arsips->onFirstPage() ? '#' : $arsips->appends($qs)->url($current - 1);
+          $nextHref = $arsips->hasMorePages() ? $arsips->appends($qs)->url($current + 1) : '#';
+        @endphp
+        <a class="pbj-page-btn {{ $arsips->onFirstPage() ? 'is-disabled' : '' }}" href="{{ $prevHref }}">
+          <i class="bi bi-chevron-left"></i>
+        </a>
+        @if($start > 1)
+          <a class="pbj-page-btn" href="{{ $arsips->appends($qs)->url(1) }}">1</a>
+          @if($start > 2)<span class="pbj-page-btn is-ellipsis">…</span>@endif
+        @endif
+        @for($i = $start; $i <= $end; $i++)
+          <a class="pbj-page-btn {{ $i === $current ? 'is-active' : '' }}" href="{{ $arsips->appends($qs)->url($i) }}">{{ $i }}</a>
+        @endfor
+        @if($end < $last)
+          @if($end < $last - 1)<span class="pbj-page-btn is-ellipsis">…</span>@endif
+          <a class="pbj-page-btn" href="{{ $arsips->appends($qs)->url($last) }}">{{ $last }}</a>
+        @endif
+        <a class="pbj-page-btn {{ $arsips->hasMorePages() ? '' : 'is-disabled' }}" href="{{ $nextHref }}">
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -469,7 +414,19 @@
             <div class="pbj-info-v" id="mJenis">-</div>
           </div>
         </div>
+
+        <div class="pbj-info-card">
+        <div class="pbj-info-ic">
+          <i class="bi bi-diagram-3"></i>
+        </div>
+        <div>
+          <div class="pbj-info-k">Metode PBJ</div>
+          <div class="pbj-info-v" id="mMetode">-</div>
+        </div>
       </div>
+
+      </div>
+
 
       <div class="pbj-divider"></div>
 
@@ -510,6 +467,153 @@
 </div>
 
 <style>
+
+.pbj-card {
+  background: #fff;
+  border: 1px solid #e8eef3;
+  border-radius: 16px;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 620px;
+}
+
+.pbj-tbl-head,
+.pbj-tbl-row {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr 1.4fr 1.2fr 1.2fr 1.2fr 80px;
+  align-items: center;
+  column-gap: 14px;
+  padding: 0 16px;
+  min-width: 820px;
+}
+
+.pbj-tbl-head {
+  background: #184f61;
+  min-height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.pbj-tbl-head .pbj-col {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.pbj-tbl-head .pbj-col-nilai { display: flex; align-items: center; gap: 4px; }
+
+.pbj-sort-btn {
+  width: 28px; height: 28px;
+  border: none; background: transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 8px;
+  color: #fff; transition: .15s; padding: 0;
+}
+.pbj-sort-btn:hover { background: rgba(255,255,255,.15); }
+.pbj-sort-btn i { font-size: 16px; }
+
+.pbj-tbl-row {
+  min-height: 64px;
+  border-top: 1px solid #eef3f6;
+  background: #fff;
+  transition: background .12s;
+}
+.pbj-tbl-row:hover { background: #f8fbfe; }
+
+.pbj-col {
+  font-size: 14px;
+  color: #1e293b;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.pbj-col-tahun { font-weight: 700; color: #374151; }
+.pbj-col-unit  { color: #374151; font-weight: 600; font-size: 13px; }
+.pbj-col-nilai { font-weight: 700; color: #184f61; white-space: nowrap; }
+.pbj-col-metode { display: flex; align-items: left; justify-content: flex-start; }
+.pbj-col-status { display: flex; align-items: center; justify-content: flex-start; }
+.pbj-col-aksi   { display: flex; align-items: center; justify-content: flex-start; }
+
+.metode-badge {
+  display: inline-flex;
+  align-items: left;
+  justify-content: left;
+  width: 100%;
+  max-width: 160px;
+  min-height: 36px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.sp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.sp-plan   { background: #fef9c3; color: #854d0e; }
+.sp-select { background: #ede9fe; color: #5b21b6; }
+.sp-do     { background: #fee2e2; color: #b91c1c; }
+.sp-done   { background: #dcfce7; color: #15803d; }
+
+.aksi-btn {
+  width: 34px; height: 34px;
+  border: 1px solid #e8eef3;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+  color: #374151;
+  transition: .15s;
+  padding: 0;
+}
+.aksi-btn:hover { transform: translateY(-1px); }
+.aksi-info:hover { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+.pbj-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid #eef3f6;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  z-index: 2;
+  min-width: 820px;
+}
+.pbj-foot-left { font-size: 13px; color: #64748b; }
+
+.pbj-tbl-head .pbj-col,
+.pbj-tbl-row .pbj-col {
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
   #mDocs.pbj-docs-grid{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
   @media (max-width: 900px){ #mDocs.pbj-docs-grid{ grid-template-columns: 1fr; } }
 
@@ -584,39 +688,34 @@
 <script>
 // SORT NILAI KONTRAK (client-side untuk page aktif)
 document.addEventListener('DOMContentLoaded', () => {
-  const btn   = document.getElementById('sortNilaiBtn');
-  const icon  = document.getElementById('sortNilaiIcon');
-  const tbody = document.querySelector('.pbj-table tbody');
-  if (!btn || !icon || !tbody) return;
+  const btn  = document.getElementById('sortNilaiBtn');
+  const icon = document.getElementById('sortNilaiIcon');
+  if (!btn || !icon) return;
 
-  let direction = 'desc';
-
-  function parseRupiah(text){
-    return parseInt((text || '').replace(/[^\d]/g, '')) || 0;
-  }
+  let direction = '';
 
   btn.addEventListener('click', () => {
-    const rows = Array.from(tbody.querySelectorAll('tr'))
-      .filter(tr => tr.children && tr.children.length >= 7);
+    const card = document.querySelector('.pbj-card');
+    const foot = card.querySelector('.pbj-foot');
+    const rows = Array.from(card.querySelectorAll('.pbj-tbl-row'));
 
-    rows.sort((a, b) => {
-      const aVal = parseRupiah(a.children[3].innerText);
-      const bVal = parseRupiah(b.children[3].innerText);
-      return direction === 'desc' ? bVal - aVal : aVal - bVal;
-    });
-
-    rows.forEach(row => tbody.appendChild(row));
-
-    if(direction === 'desc'){
+    if (direction === '' || direction === 'desc') {
       direction = 'asc';
       icon.className = 'bi bi-sort-up';
-    }else{
+    } else {
       direction = 'desc';
       icon.className = 'bi bi-sort-down-alt';
     }
+
+    rows.sort((a, b) => {
+      const aVal = parseInt(a.dataset.moneyraw || '0');
+      const bVal = parseInt(b.dataset.moneyraw || '0');
+      return direction === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    rows.forEach(row => card.insertBefore(row, foot));
   });
 });
-
 /* ======================
    ✅ FILTER AUTO-REFRESH (DEBOUNCE)
 ====================== */
@@ -706,6 +805,7 @@ function openDetailModal(payload){
   document.getElementById('mStatus').textContent  = payload?.status  ?? '-';
   document.getElementById('mRekanan').textContent = payload?.rekanan ?? '-';
   document.getElementById('mJenis').textContent   = payload?.jenis   ?? '-';
+  document.getElementById('mMetode').textContent = payload?.metode ?? '-';
 
   document.getElementById('mPagu').textContent    = payload?.pagu    ?? '-';
   document.getElementById('mHps').textContent     = payload?.hps     ?? '-';

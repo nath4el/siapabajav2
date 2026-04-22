@@ -226,7 +226,7 @@
     <section class="ap-filter-bar">
       <div class="ap-search-wrap">
         <i class="bi bi-search ap-search-ic"></i>
-        <input id="apSearchInput" type="text" class="ap-search-input" placeholder="Lorem Ipsum" value="{{ $initialQ }}" autocomplete="off" />
+        <input id="apSearchInput" type="text" class="ap-search-input" placeholder="Cari Arsip..." value="{{ $initialQ }}" autocomplete="off" />
       </div>
 
       <div class="ap-sel-wrap">
@@ -270,9 +270,6 @@
     <section class="ap-table-section">
       {{-- Table Head --}}
       <div class="ap-tbl-head">
-        <div class="ap-col-check">
-          <input id="apSelectAll" type="checkbox" class="ap-checkbox" aria-label="Pilih semua" />
-        </div>
         <div class="ap-col ap-col-tahun">Tahun</div>
         <div class="ap-col ap-col-unit">Unit Kerja</div>
         <div class="ap-col ap-col-job">Nama Pekerjaan</div>
@@ -326,10 +323,6 @@
              data-unit="{{ trim((string)($r['unit'] ?? '')) }}"
              data-moneyraw="{{ $nilaiRaw }}"
              data-search="{{ $hayLower }}">
-
-          <div class="ap-col-check">
-            <input class="ap-row-check ap-checkbox" type="checkbox" value="{{ $r['id'] }}" aria-label="Pilih baris" />
-          </div>
 
           <div class="ap-col ap-col-tahun">{{ $r['tahun'] }}</div>
           <div class="ap-col ap-col-unit">{{ $r['unit'] }}</div>
@@ -563,6 +556,11 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 /* ─── Layout ─── */
 .dash-wrap { display: flex; min-height: 100vh; background: #f4f7fa; }
 
+.dash-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+}
+
 /* ─── Main ─── */
 .dash-main { flex: 1; min-width: 0; padding: 28px 28px 40px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -649,18 +647,19 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-filter-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 12px 16px;
-  flex-wrap: wrap;
+  padding: 12px 14px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .ap-search-wrap {
   position: relative;
-  flex: 1 1 260px;
-  min-width: 200px;
+  flex: 1 1 120px;
+  min-width: 100px;
   display: flex;
   align-items: center;
 }
@@ -690,7 +689,7 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-search-input:focus { border-color: #94a3b8; background: #fff; }
 .ap-search-input::placeholder { color: #b0bec5; }
 
-.ap-sel-wrap { flex: 0 0 auto; }
+.ap-sel-wrap { flex: 0 0 auto; min-width: 0; }
 .ap-sel {
   height: 40px;
   padding: 0 32px 0 12px;
@@ -704,10 +703,11 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   -webkit-appearance: none;
   cursor: pointer;
   outline: none;
-  min-width: 120px;
+  min-width: 90px;
+  max-width: 160px;
 }
 
-.ap-filter-tools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.ap-filter-tools { display: flex; gap: 6px; align-items: center; margin-left: auto; flex-shrink: 0; }
 .ap-tool-btn {
   width: 40px;
   height: 40px;
@@ -739,11 +739,11 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-tbl-head,
 .ap-tbl-row {
   display: grid;
-  grid-template-columns: 44px 80px 1.4fr 2.2fr 1.3fr 1.4fr 1.2fr 120px;
+  grid-template-columns: 1fr 1.8fr 1.4fr 1.2fr 1.2fr 1.2fr 120px;
   align-items: center;
-  column-gap: 16px;
-  padding: 0 18px;
-  min-width: 900px; /* pastikan grid tidak menyempit di layar kecil */
+  column-gap: 12px;
+  padding: 0 14px;
+  min-width: 820px;
 }
 
 /* Head */
@@ -761,7 +761,7 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   letter-spacing: .3px;
   white-space: nowrap;
 }
-.ap-tbl-head .ap-col-check { display: flex; align-items: center; justify-content: center; }
+
 .ap-tbl-head .ap-col-nilai { display: flex; align-items: center; gap: 4px; }
 
 /* Sort button */
@@ -781,45 +781,48 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-tbl-row {
   min-height: 64px;
   border-top: 1px solid var(--tbl-row-border);
-  transition: all 0.15s ease;
+  transition: background 0.15s ease;
+  background: #ffffff;
 }
 
 .ap-tbl-row:hover {
-  background: #f8fbff;
-  transform: translateY(-1px);
+  background: #f8fafc;
 }
 
-.ap-col { font-size: 14px; color: #1e293b; min-width: 0; overflow-wrap: anywhere; }
-.ap-col-tahun { text-align: center; font-weight: 700; color: #374151; }
-.ap-col-unit  { color: #374151; font-weight: 600; font-size: 13px; line-height: 1.35; }
-.ap-col-job   { line-height: 1.4; color: #1e293b; }
-.ap-col-nilai { font-weight: 700; color: var(--navy2); white-space: nowrap; }
-.ap-col-aksi  { display: flex; align-items: center; gap: 6px; justify-content: center; }
-.ap-col-status { display: flex; align-items: center; }
-.ap-col-metode { display: flex; align-items: center; }
+.ap-col { font-size: 14px; color: #1e293b; min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.ap-col-tahun { text-align: left; font-weight: 700; color: #374151; }
+.ap-col-unit  { color: #374151; font-weight: 600; font-size: 13px; line-height: 1.35; text-align: left; }
+.ap-col-job   { line-height: 1.4; color: #1e293b; text-align: left; }
+.ap-col-nilai { font-weight: 700; color: var(--navy2); white-space: nowrap; text-align: left; }
+.ap-col-aksi  { display: flex; align-items: center; gap: 6px; justify-content: flex-start; }
+.ap-col-status { display: flex; align-items: center; justify-content: flex-start; }
+.ap-col-metode { display: flex; align-items: center; justify-content: flex-start; }
 
-/* Checkbox */
-.ap-checkbox {
-  width: 17px; height: 17px; border-radius: 5px;
-  cursor: pointer; accent-color: var(--navy);
+.ap-col-status,
+.ap-col-metode,
+.ap-col-aksi {
+  justify-content: flex-start !important;
 }
-.ap-col-check { display: flex; align-items: center; justify-content: center; }
 
 /* Metode Badge */
 .metode-badge {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;
+  align-items: left;
+  justify-content: left;
+  width: 100%;
+  max-width: 160px;
+  min-height: 36px;
+  padding: 5px 10px;
   border-radius: 8px;
   background: #dbeafe;
   color: #1e40af;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
-  width: 160px;        
-  height: 34px; 
-  text-align: center;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 
 .ap-col-metode {
@@ -874,7 +877,7 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   gap: 12px;
   padding: 14px 16px;
   border-top: 1px solid var(--tbl-row-border);
-  min-width: 900px; /* ikut min-width grid */
+  min-width: 700px; /* ikut min-width grid */
 }
 .ap-pagination-wrap {
   position: sticky;
@@ -1200,23 +1203,6 @@ document.addEventListener('DOMContentLoaded', function(){
     window.location.href = url.toString();
   });
 
-  /* ── Select All ── */
-  function syncSelectAll(){
-    const checks = Array.from(document.querySelectorAll('.ap-row-check'));
-    const cnt = checks.filter(c=>c.checked).length;
-    if(!selectAll) return;
-    selectAll.checked = checks.length > 0 && cnt === checks.length;
-    selectAll.indeterminate = cnt > 0 && cnt < checks.length;
-  }
-
-  document.addEventListener('change', function(e){
-    if(e.target?.classList?.contains('ap-row-check')) syncSelectAll();
-    if(e.target?.id === 'apSelectAll'){
-      document.querySelectorAll('.ap-row-check').forEach(cb => cb.checked = selectAll.checked);
-      selectAll.indeterminate = false;
-    }
-  });
-
   /* ── Detail Modal ── */
   function normalizeStorageUrl(path){
     if(!path) return '#';
@@ -1527,10 +1513,7 @@ function updateAksiState() {
 }
 
 function highlightRow() {
-  document.querySelectorAll('.ap-tbl-row').forEach(row => {
-    const checkbox = row.querySelector('.ap-row-check');
-    row.style.background = checkbox.checked ? '#f0f9ff' : '';
-  });
+  // checkbox dihapus, tidak perlu highlight
 }
 
 document.addEventListener('change', function(e) {

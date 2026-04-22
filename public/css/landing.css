@@ -13,7 +13,8 @@
   --text: #0f172a;
   --muted: #64748b;
 
-  --container: 1280px;
+  --container: 1200px;
+
 
   --card: #ffffff;
   --border: #e6eef2;
@@ -312,7 +313,7 @@ html{
 
 .card-title{
   font-size: 20px;
-  font-weight: 700; /* ✅ ga setebel 900 */
+  font-weight: 700; 
   color: var(--navy-2);
 }
 
@@ -554,25 +555,33 @@ html{
 .footer-brand{
   display:flex;
   align-items:center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .footer .brand-logo{
-  width: 68px;
-  height: 68px;
-  padding: 0;
-  border-radius: 0;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
-  flex: 0 0 auto;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,.16));
+  padding: 0;   
+  border-radius: 12px;
+  display: block;
 }
 
 .footer .brand-name{
-  font-size: 32px;
-  font-weight: 850;
-  letter-spacing: .4px;
-  line-height: 1.05;
+  font-size: 30px;
+  font-weight: 800;
   color: var(--yellow);
+}
+
+.footer .brand-name{
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.footer .brand{
+  pointer-events: none;
+  cursor: default;
 }
 
 /* ---------- CENTER: Deskripsi ---------- */
@@ -912,52 +921,78 @@ html{
   border-collapse:separate;
   border-spacing:0;
   font-size:14px;
+  table-layout: auto;
 }
 
+/* HEADER */
 .pbj-table thead th{
   background:#134a5a;
   color:#fff;
-  text-align: center;  
+  text-align: left !important;  
   padding:12px 14px;
   font-weight:600;
-  white-space:nowrap;
+  white-space: normal;
   vertical-align: middle;
 }
 
+/* SORT ICON */
 .pbj-th-sort{
   display:inline-flex;
   align-items:center;
-  justify-content:center; /* ⬅️ CENTER */
+  justify-content:flex-start; /* ✅ kiri */
   gap:6px;
 }
 
+/* SEMUA ISI */
+.pbj-table th,
+.pbj-table td {
+  text-align: left !important;
+  vertical-align: middle;
+}
+
+/* HAPUS CENTER SEMUA */
 .pbj-table td.pbj-col-action{
-  text-align: center;
+  text-align: left;
 }
 
 .pbj-metode {
-  text-align: center;
+  text-align: left;
 }
 
+/* BADGE */
 .metode-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* ✅ kiri */
 
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
 
   background: #dbeafe;
   color: #1e40af;
 
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
 
-  width: 160px;
-  height: 34px;
+  min-width: 140px;
+  height: 50px;
+}
 
-  text-align: center;
+/* ❌ HAPUS RIGHT (BIAR KIRI SEMUA) */
+.pbj-table tbody td:nth-child(5){
+  text-align: left;
+}
+
+/* Nama Pekerjaan */
+.pbj-table thead th:nth-child(3),
+.pbj-table tbody td:nth-child(3){
+  width: 30%;
+}
+
+/* Metode PBJ */
+.pbj-table thead th:nth-child(4),
+.pbj-table tbody td:nth-child(4){
+  width: 18%;
 }
 
 .pbj-unit {
@@ -967,22 +1002,15 @@ html{
 }
 
 .pbj-job-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
 }
 
-/* SAMAIN SPACING ROW */
+/* ROW */
 .pbj-table tbody td {
   padding: 14px 14px;
   border-top: 1px solid #eef3f6;
-  vertical-align: middle;
-}
-
-/* HEADER */
-.pbj-table thead th {
-  font-weight: 600;
-  text-align: center;
 }
 /* ===============================
    LINK KEMBALI (PBJ)
@@ -1008,42 +1036,6 @@ html{
 .detail-back:hover{
   color: #0e3f4d;        /* 🔵 lebih gelap saat hover */
   text-decoration: underline;
-}
-
-/* ===============================
-   CENTER ISI TABEL PBJ (TD)
-=============================== */
-
-/* Metode PBJ */
-.pbj-table tbody td:nth-child(4){
-  text-align: center;
-}
-
-/* Nilai Kontrak */
-.pbj-table tbody td:nth-child(5){
-  text-align: center;
-}
-
-/* Status Arsip */
-.pbj-table tbody td:nth-child(6){
-  text-align: center;
-}
-
-/* Status Pekerjaan */
-.pbj-table tbody td:nth-child(7){
-  text-align: center;
-}
-
-/* Aksi */
-.pbj-table tbody td:nth-child(8){
-  text-align: center;
-}
-.pbj-table td .chip{
-  margin: 0 auto;
-}
-
-.pbj-arsip{
-  justify-content: center;
 }
 
 .pbj-table tbody td{
@@ -1270,9 +1262,20 @@ html{
 
 /* 6 info box (2x3) */
 .pbj-info-grid{
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+
+  align-items: stretch;
+}
+
+.pbj-info-card{
+  width: 100%;
+  max-width: 100%;
+}
+
+.pbj-info-card{
+  grid-column: span 1 !important;
 }
 
 .pbj-info-card{

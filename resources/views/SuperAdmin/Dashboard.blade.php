@@ -314,7 +314,7 @@
 </div>
 
 <style>
-  .dash-body{ font-size:18px; line-height:1.6; font-weight:700; }
+  .dash-body{ font-size:14px; line-height:1.5; font-weight:700; }
   body.is-modal-open{ overflow:hidden !important; }
 
   /* ================= HEADER DASHBOARD FINAL ================= */
@@ -356,12 +356,13 @@
   .u-label,.u-value,.u-money,.u-sub,.u-chart-title,.u-select select{ font-weight:700 !important; }
 
   .u-card{ position:relative; }
-  .u-card-filter{
+ .u-card-filter{
   display:flex;
   gap:8px;
   align-items:center;
-  justify-content:flex-end;
+  justify-content:flex-start;
   margin-top:10px;
+  flex-wrap:wrap;
 }
 
   .u-mini-select{ position:relative; }
@@ -370,6 +371,8 @@
     padding:8px 32px 8px 12px;
     font-family:inherit; font-size:14px; font-weight:400 !important;
     background:#fff; outline:none; appearance:none; cursor:pointer;
+    max-width:140px;
+    width:100%;
   }
   .u-mini-select i{
     position:absolute; right:10px; top:50%;
@@ -380,12 +383,29 @@
   .dash-sidebar{
     position:sticky; top:0; height:100vh; overflow:hidden;
     display:flex; flex-direction:column;
+    width:220px; flex-shrink:0;
   }
+
+ .dash-wrap{
+  display: flex;
+  min-height: 100vh;
+}
+
+.dash-main{
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px 28px;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
 
   .u-sum{ display:grid; gap:16px; }
   .u-sum-row{ display:grid; gap:16px; }
-  .u-sum-row--5{ grid-template-columns:repeat(5,minmax(0,1fr)); }
-  .u-sum-row--2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .u-sum-row--5{ grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));}
+  .u-sum-row--2{grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));}
 
   .u-card{
     background:#fff; border:1px solid #e6eef2; border-radius:14px;
@@ -432,7 +452,7 @@
   .u-charts{
     margin-top:18px;
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap:18px;
   }
   .u-chart-card{
@@ -632,15 +652,13 @@
   }
   .u-modal-hint{ font-size:12px; color:#94a3b8; }
 
-  @media(max-width:1100px){
-    .u-sum-row--5{ grid-template-columns:1fr; }
-    .u-sum-row--2{ grid-template-columns:1fr; }
-    .u-charts{ grid-template-columns:1fr; }
-    .u-money,.u-value{ font-size:28px; }
-    .u-card-filter{ position:static; margin-top:12px; flex-wrap:wrap; }
-    .u-modal-dialog{ width:calc(100vw - 26px); height:88vh; }
-    .u-unit-grid{ grid-template-columns:1fr; }
-  }
+ @media(max-width:1100px){
+  .u-sum-row--5{ grid-template-columns: repeat(2,1fr); }
+}
+
+@media(max-width:600px){
+  .u-sum-row--5{ grid-template-columns: 1fr; }
+}
 </style>
 
 <script>

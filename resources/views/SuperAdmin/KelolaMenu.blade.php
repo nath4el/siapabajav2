@@ -302,6 +302,16 @@ body.page-km,
 body.page-km *{
   font-weight:700 !important;
 }
+body.page-km .km-btn-loader{
+  font-weight:400 !important;
+  width:16px !important;
+  height:16px !important;
+  border:2px solid rgba(255,255,255,.4) !important;
+  border-top-color:#fff !important;
+  border-radius:50% !important;
+  display:inline-block !important;
+  animation:spin .6s linear infinite !important;
+}
 
 /* ── Layout ── */
 *,*::before,*::after{box-sizing:border-box;}
@@ -412,6 +422,7 @@ body.page-km{
   font-size:13px;
   letter-spacing:.3px;
   white-space:nowrap;
+  text-align:left;
 }
 
 .km-tbl-row{
@@ -426,9 +437,10 @@ body.page-km{
   color:#1e293b;
   min-width:0;
   overflow-wrap:anywhere;
+  text-align:left;
 }
 .km-col-no{
-  text-align:center;
+  text-align:left;
   color:#94a3b8;
   font-size:13px;
 }

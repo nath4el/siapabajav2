@@ -169,6 +169,7 @@
             'rekanan' => $item->nama_rekanan ?? '-',
             'jenis'   => $item->jenis_pengadaan ?? '-',
             'pagu'    => rupiah($item->pagu_anggaran),
+            'metode'  => $item->metode_pbj ?? $item->metode_pengadaan ?? $item->metode ?? $item->jenis_pengadaan ?? '-',
             'hps'     => rupiah($item->hps),
             'kontrak' => rupiah($item->nilai_kontrak),
             'docnote' => buildDocNoteForLanding($item),
@@ -256,6 +257,16 @@
           <div>
             <div class="pbj-info-k">Status Pekerjaan</div>
             <div class="pbj-info-v" id="mStatus">-</div>
+          </div>
+        </div>
+
+        <div class="pbj-info-card">
+          <div class="pbj-info-ic">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+          <div>
+            <div class="pbj-info-k">Metode PBJ</div>
+            <div class="pbj-info-v" id="mMetode">-</div>
           </div>
         </div>
 

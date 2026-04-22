@@ -262,9 +262,6 @@
 
     <section class="ap-table-section">
       <div class="ap-tbl-head">
-        <div class="ap-col-check">
-          <input id="apSelectAll" type="checkbox" class="ap-checkbox" aria-label="Pilih semua" />
-        </div>
         <div class="ap-col ap-col-tahun">Tahun</div>
         <div class="ap-col ap-col-unit">Unit Kerja</div>
         <div class="ap-col ap-col-job">Nama Pekerjaan</div>
@@ -317,10 +314,6 @@
              data-unit="{{ trim((string)($r['unit'] ?? '')) }}"
              data-moneyraw="{{ $nilaiRaw }}"
              data-search="{{ $hayLower }}">
-
-          <div class="ap-col-check">
-            <input class="ap-row-check ap-checkbox" type="checkbox" value="{{ $r['id'] }}" aria-label="Pilih baris" />
-          </div>
 
           <div class="ap-col ap-col-tahun">{{ $r['tahun'] }}</div>
           <div class="ap-col ap-col-unit">{{ $r['unit'] }}</div>
@@ -626,21 +619,24 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-filter-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 12px 16px;
-  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  flex-wrap: nowrap;     /* 🔥 penting */
+  overflow: hidden;      /* 🔥 biar ga geser */
 }
 
 .ap-search-wrap {
   position: relative;
-  flex: 1 1 260px;
-  min-width: 200px;
+  flex: 1 1 120px;
+  min-width: 100px;
   display: flex;
   align-items: center;
 }
+
 .ap-search-ic {
   position: absolute;
   left: 12px;
@@ -657,34 +653,35 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   border-radius: 10px;
   padding: 0 12px 0 38px;
   font-size: 14px;
-  font-family: 'Nunito', sans-serif;
-  color: #0f172a;
   background: #f8fafc;
-  box-sizing: border-box;
-  outline: none;
-  transition: border-color .15s;
 }
+
 .ap-search-input:focus { border-color: #94a3b8; background: #fff; }
 .ap-search-input::placeholder { color: #b0bec5; }
 
-.ap-sel-wrap { flex: 0 0 auto; }
+.ap-sel-wrap {
+  flex: 0 0 auto;
+  min-width: 0;
+}
 .ap-sel {
   height: 40px;
   padding: 0 32px 0 12px;
   border: 1px solid var(--border);
   border-radius: 10px;
   font-size: 14px;
-  font-family: 'Nunito', sans-serif;
-  color: #0f172a;
-  background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 10px center;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  outline: none;
-  min-width: 120px;
+  background: #f8fafc;
+
+  min-width: 90px;
+  max-width: 160px;
 }
 
-.ap-filter-tools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.ap-filter-tools {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;   /* 🔥 biar ga ikut kegeser */
+}
 .ap-tool-btn {
   width: 40px;
   height: 40px;
@@ -713,7 +710,7 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-tbl-head,
 .ap-tbl-row {
   display: grid;
-  grid-template-columns: 44px 72px 1.3fr 2.2fr 180px 1.4fr 1.1fr 110px;
+  grid-template-columns: 1fr 1.8fr 1.4fr 1.2fr 1.2fr 1.2fr 120px;
   align-items: center;
   column-gap: 14px;
   padding: 0 16px;
@@ -732,8 +729,9 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   font-weight: 700;
   letter-spacing: .3px;
   white-space: nowrap;
+  text-align: left;
 }
-.ap-tbl-head .ap-col-check { display: flex; align-items: center; justify-content: center; }
+
 .ap-tbl-head .ap-col-nilai { display: flex; align-items: center; gap: 4px; }
 
 .ap-sort-btn {
@@ -750,15 +748,22 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   min-height: 64px;
   border-top: 1px solid var(--tbl-row-border);
   transition: background .12s;
+  background: #ffffff;
 }
 .ap-tbl-row:hover { background: #f8fbfe; }
 
-.ap-col { font-size: 14px; color: #1e293b; min-width: 0; overflow-wrap: anywhere; }
-.ap-col-tahun { text-align: center; font-weight: 700; color: #374151; }
+.ap-col {
+  font-size: 14px;
+  color: #1e293b;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.ap-col-tahun { text-align: left; font-weight: 700; color: #374151; }
 .ap-col-unit  { color: #374151; font-weight: 600; font-size: 13px; line-height: 1.35; }
 .ap-col-job   { line-height: 1.4; color: #1e293b; }
 .ap-col-nilai { font-weight: 700; color: var(--navy2); white-space: nowrap; }
-.ap-col-aksi  { display: flex; align-items: center; gap: 6px; justify-content: center; }
+.ap-col-aksi  { display: flex; align-items: center; gap: 6px; justify-content: flex-start; }
 .ap-col-status { display: flex; align-items: center; }
 .ap-col-metode {display: flex;align-items: center;justify-content: center;}
 
@@ -772,22 +777,20 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  width: 160px;       
-  min-height: 34px;
-
-  padding: 6px 10px;
+  width: 100%;
+  max-width: 160px;
+  min-height: 36px;
+  padding: 5px 10px;
   border-radius: 8px;
   background: #dbeafe;
   color: #1e40af;
-
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  line-height: 1.2;
-
+  line-height: 1.4;
   text-align: center;
-  word-break: break-word; 
-
+  white-space: normal;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 .sp-badge {
   display: inline-flex;
@@ -1479,71 +1482,13 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-/* Disable / enable edit & delete */
 function updateAksiState() {
-  document.querySelectorAll('.ap-tbl-row').forEach(row => {
-    const checkbox = row.querySelector('.ap-row-check');
-
-    const editBtn = row.querySelector('.aksi-edit');
-    const deleteBtn = row.querySelector('.aksi-delete');
-
-    if (!checkbox.checked) {
-      [editBtn, deleteBtn].forEach(btn => {
-        if (!btn) return;
-        btn.classList.add('disabled-aksi');
-        btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.5';
-      });
-    } else {
-      [editBtn, deleteBtn].forEach(btn => {
-        if (!btn) return;
-        btn.classList.remove('disabled-aksi');
-        btn.style.pointerEvents = 'auto';
-        btn.style.opacity = '1';
-      });
-    }
+  document.querySelectorAll('.aksi-edit, .aksi-delete').forEach(btn => {
+    btn.style.pointerEvents = 'auto';
+    btn.style.opacity = '1';
   });
 }
-
-/* Highlight row kalau dicentang */
-function highlightRow() {
-  document.querySelectorAll('.ap-tbl-row').forEach(row => {
-    const checkbox = row.querySelector('.ap-row-check');
-    if (checkbox.checked) {
-      row.style.background = '#f0f9ff';
-    } else {
-      row.style.background = '';
-    }
-  });
-}
-
-/* Event checkbox */
-document.addEventListener('change', function(e) {
-  if (
-    e.target.classList.contains('ap-row-check') ||
-    e.target.id === 'apSelectAll'
-  ) {
-    updateAksiState();
-    highlightRow();
-  }
-});
-
-/* Block klik edit & delete kalau belum checklist */
-document.querySelectorAll('.aksi-edit, .aksi-delete').forEach(btn => {
-  btn.addEventListener('click', function(e) {
-    const row = btn.closest('.ap-tbl-row');
-    const checkbox = row.querySelector('.ap-row-check');
-
-    if (!checkbox.checked) {
-      e.preventDefault();
-      alert('Centang data dulu sebelum edit atau hapus!');
-    }
-  });
-});
-
-/* INIT pertama kali */
 updateAksiState();
-highlightRow();
 </script>
 
 

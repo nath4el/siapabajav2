@@ -239,9 +239,6 @@
 
     {{-- Kepala Tabel --}}
     <div class="ap-tbl-head">
-        <div class="ap-col-check">
-            <input id="apSelectAll" type="checkbox" class="ap-checkbox" aria-label="Pilih semua" />
-        </div>
         <div class="ap-col ap-col-tahun">Tahun</div>
         <div class="ap-col ap-col-unit">Unit Kerja</div>
         <div class="ap-col ap-col-job">Nama Pekerjaan</div>
@@ -257,7 +254,6 @@
                 "></i>
             </button>
         </div>
-        <div class="ap-col ap-col-arsip">Status Arsip</div>
         <div class="ap-col ap-col-status">Status Pekerjaan</div>
         <div class="ap-col ap-col-aksi">Aksi</div>
     </div>
@@ -309,11 +305,6 @@
                  data-moneyraw="{{ $nilaiRaw }}"
                  data-search="{{ $hayLower }}">
 
-                <div class="ap-col-check">
-                    <input class="ap-row-check ap-checkbox" type="checkbox"
-                           value="{{ $r['id'] }}" aria-label="Pilih baris" />
-                </div>
-
                 <div class="ap-col ap-col-tahun">{{ $r['tahun'] }}</div>
                 <div class="ap-col ap-col-unit">{{ $r['unit'] }}</div>
                 <div class="ap-col ap-col-job">{{ $namaPekerjaan }}</div>
@@ -324,13 +315,7 @@
 
                 <div class="ap-col ap-col-nilai">{{ $r['nilai_kontrak'] }}</div>
 
-                <div class="ap-col ap-col-arsip">
-                    @if (($r['status_arsip'] ?? '') === 'Publik')
-                        <span class="ap-eye ap-eye-pub"><i class="bi bi-eye"></i> Publik</span>
-                    @else
-                        <span class="ap-eye ap-eye-pri"><i class="bi bi-eye-slash"></i> Privat</span>
-                    @endif
-                </div>
+                
 
                 <div class="ap-col ap-col-status">
                     <span class="{{ $spClass }}">{{ $r['status_pekerjaan'] }}</span>
@@ -654,7 +639,8 @@ body.page-arsip.dash-body {
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     padding: 12px 16px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }
 
 .ap-search-wrap {
@@ -709,6 +695,12 @@ body.page-arsip.dash-body {
   max-height: 600px;
 }
 
+.ap-tbl-head .ap-col,
+.ap-tbl-row .ap-col {
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
 /* pastikan tabel lebih lebar dari container */
 .ap-tbl-head,
 .ap-tbl-row {
@@ -719,11 +711,11 @@ body.page-arsip.dash-body {
 .ap-tbl-head,
 .ap-tbl-row {
     display: grid;
-    grid-template-columns: 44px 72px 1.2fr 2fr 180px 1.3fr 1fr 1.1fr 110px;
+    grid-template-columns: 1fr 1.8fr 1.4fr 1.2fr 1.2fr 1.2fr 120px;
     align-items: center;
     column-gap: 14px;
     padding: 0 16px;
-    min-width: 900px;
+    min-width: 820px;
 }
 
 .ap-tbl-head {
@@ -736,6 +728,7 @@ body.page-arsip.dash-body {
 .ap-tbl-head .ap-col {
     color: var(--tbl-head-txt);
     font-size: 13px; font-weight: 700; letter-spacing: .3px; white-space: nowrap;
+    text-align: left;
 }
 .ap-tbl-head .ap-col-check { display: flex; align-items: center; justify-content: center; }
 .ap-tbl-head .ap-col-nilai  { display: flex; align-items: center; gap: 4px; }
@@ -752,18 +745,19 @@ body.page-arsip.dash-body {
     min-height: 64px;
     border-top: 1px solid var(--tbl-row-border);
     transition: background .12s;
+    background: #ffffff;
 }
 .ap-tbl-row:hover { background: #f8fbfe; }
 
-.ap-col           { font-size: 14px; color: #1e293b; min-width: 0; overflow-wrap: anywhere; }
-.ap-col-tahun     { text-align: center; font-weight: 700; color: #374151; }
+.ap-col { font-size: 14px; color: #1e293b; min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.ap-col-tahun { text-align: left; font-weight: 700; color: #374151; }
 .ap-col-unit      { color: #374151; font-weight: 600; font-size: 13px; line-height: 1.35; }
 .ap-col-job       { line-height: 1.4; color: #1e293b; }
 .ap-col-nilai     { font-weight: 700; color: var(--navy2); white-space: nowrap; }
 .ap-col-arsip     { display: flex; align-items: center; }
-.ap-col-status    { display: flex; align-items: center; }
-.ap-col-metode {display: flex;align-items: center;justify-content: center;}
-.ap-col-aksi      { display: flex; align-items: center; gap: 6px; justify-content: center; }
+.ap-col-status { display: flex; align-items: center; justify-content: flex-start; }
+.ap-col-metode { display: flex; align-items: center; justify-content: flex-start; }
+.ap-col-aksi { display: flex; align-items: center; gap: 6px; justify-content: flex-start; }
 
 .metode-badge {
     display: inline-flex;
@@ -1100,42 +1094,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* -------- Row highlight & aksi state -------- */
     function updateAksiState() {
-        document.querySelectorAll('.ap-tbl-row').forEach(row => {
-            const checkbox  = row.querySelector('.ap-row-check');
-            const editBtn   = row.querySelector('.aksi-edit');
-            const deleteBtn = row.querySelector('.aksi-delete');
-            const checked   = checkbox?.checked;
-
-            [editBtn, deleteBtn].forEach(btn => {
-                if (!btn) return;
-                btn.classList.toggle('disabled-aksi', !checked);
-                btn.style.pointerEvents = checked ? 'auto' : 'none';
-                btn.style.opacity       = checked ? '1' : '0.5';
-            });
-        });
-    }
-
-    function highlightRow() {
-        document.querySelectorAll('.ap-tbl-row').forEach(row => {
-            const checkbox = row.querySelector('.ap-row-check');
-            row.style.background = checkbox?.checked ? '#f0f9ff' : '';
-        });
-    }
-
-    /* Block klik edit/delete kalau belum dicentang */
     document.querySelectorAll('.aksi-edit, .aksi-delete').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            const row = btn.closest('.ap-tbl-row');
-            const checkbox = row?.querySelector('.ap-row-check');
-            if (!checkbox?.checked) {
-                e.preventDefault();
-                alert('Centang data dulu sebelum edit atau hapus!');
-            }
-        });
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
     });
-
-    updateAksiState();
-    highlightRow();
+}
+updateAksiState();
 
     /* -------- Toast -------- */
     const ntToast = document.getElementById('ntToast');
