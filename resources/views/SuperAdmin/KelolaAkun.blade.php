@@ -14,14 +14,19 @@
 <body class="dash-body page-akun">
 @php
   $user = auth()->user();
-
-  $name  = $superAdminName ?? ($user->name ?? 'Super Admin');
-  $email = $superAdminEmail ?? ($user->email ?? 'superadmin@gmail.com');
+  $name     = $superAdminName ?? ($user->name ?? 'Super Admin');
+  $email    = $superAdminEmail ?? ($user->email ?? 'superadmin@gmail.com');
   $roleText = $roleText ?? 'SUPER ADMIN';
   $initials = strtoupper(mb_substr(trim($name), 0, 1));
+
+  $kelolaAkunActive = request()->routeIs('superadmin.kelola.akun')
+    || request()->routeIs('superadmin.kelola.akun.ppk')
+    || request()->routeIs('superadmin.kelola.akun.unit');
 @endphp
 
 <div class="dash-wrap">
+
+  {{-- ======= SIDEBAR ======= --}}
   <aside class="dash-sidebar">
     <div class="dash-brand">
       <div class="dash-logo">
@@ -34,43 +39,52 @@
     </div>
 
     <nav class="dash-nav">
-      <a class="dash-link" href="{{ route('superadmin.dashboard') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}"
+         href="{{ route('superadmin.dashboard') }}">
         <span class="ic"><i class="bi bi-grid-fill"></i></span>
         Dashboard
       </a>
 
-      <a class="dash-link" href="{{ route('superadmin.arsip') }}">
-        <span class="ic"><i class="bi bi-archive-fill"></i></span>
+      <a class="dash-link {{ request()->routeIs('superadmin.arsip*') ? 'active' : '' }}"
+         href="{{ route('superadmin.arsip') }}">
+        <span class="ic"><i class="bi bi-archive"></i></span>
         Arsip PBJ
       </a>
 
-      <a class="dash-link" href="{{ route('superadmin.pengadaan.create') }}">
-        <span class="ic"><i class="bi bi-plus-square-fill"></i></span>
+      <a class="dash-link {{ request()->routeIs('superadmin.pengadaan.create') ? 'active' : '' }}"
+         href="{{ route('superadmin.pengadaan.create') }}">
+        <span class="ic"><i class="bi bi-plus-square"></i></span>
         Tambah Pengadaan
       </a>
 
-      <a class="dash-link" href="{{ route('superadmin.kelola.menu') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.kelola.menu') ? 'active' : '' }}"
+         href="{{ route('superadmin.kelola.menu') }}">
         <span class="ic"><i class="bi bi-gear-fill"></i></span>
         Kelola Menu
       </a>
 
-      <div class="dash-link dash-link-parent is-open" id="kelolaAkunParent">
+      {{-- Kelola Akun: accordion --}}
+      <button class="dash-link dash-link-accordion {{ $kelolaAkunActive ? 'active' : '' }}"
+              id="kelolaAkunParent" type="button">
         <span class="ic"><i class="bi bi-person-gear"></i></span>
         Kelola Akun
         <i class="bi bi-chevron-down dash-chevron"></i>
-      </div>
+      </button>
 
-      <div class="dash-sub is-open" id="kelolaAkunSub">
-        <a class="dash-sub-link active" href="{{ route('superadmin.kelola.akun') }}">
+      <div class="dash-sub {{ $kelolaAkunActive ? 'is-open' : '' }}" id="kelolaAkunSub">
+        <a class="dash-sub-link {{ request()->routeIs('superadmin.kelola.akun') && !request()->routeIs('superadmin.kelola.akun.ppk') && !request()->routeIs('superadmin.kelola.akun.unit') ? 'active' : '' }}"
+           href="{{ route('superadmin.kelola.akun') }}">
           <span class="ic"><i class="bi bi-person-circle"></i></span>
           Kelola Akun Saya
         </a>
-        <a class="dash-sub-link" href="{{ route('superadmin.kelola.akun.ppk') }}">
-          <span class="ic"><i class="bi bi-person-badge-fill"></i></span>
+        <a class="dash-sub-link {{ request()->routeIs('superadmin.kelola.akun.ppk') ? 'active' : '' }}"
+           href="{{ route('superadmin.kelola.akun.ppk') }}">
+          <span class="ic"><i class="bi bi-person-badge"></i></span>
           Kelola Akun PPK
         </a>
-        <a class="dash-sub-link" href="{{ route('superadmin.kelola.akun.unit') }}">
-          <span class="ic"><i class="bi bi-people-fill"></i></span>
+        <a class="dash-sub-link {{ request()->routeIs('superadmin.kelola.akun.unit') ? 'active' : '' }}"
+           href="{{ route('superadmin.kelola.akun.unit') }}">
+          <span class="ic"><i class="bi bi-people"></i></span>
           Kelola Akun Unit
         </a>
       </div>
@@ -86,6 +100,7 @@
     </div>
   </aside>
 
+  {{-- ======= MAIN ======= --}}
   <main class="dash-main">
     <header class="dash-header">
       <h1>Kelola Akun</h1>
@@ -114,6 +129,7 @@
     @endif
 
     <section class="a-grid">
+      {{-- Card kiri: info akun --}}
       <div class="a-card">
         <div class="a-card-head">
           <div class="a-head-left">
@@ -124,7 +140,6 @@
             </div>
           </div>
         </div>
-
         <div class="a-card-body">
           <div class="a-profile">
             <div class="a-avatar">{{ $initials }}</div>
@@ -136,7 +151,6 @@
               </div>
             </div>
           </div>
-
           <div class="a-tips">
             <div class="a-tip-title"><i class="bi bi-info-circle"></i> Tips keamanan</div>
             <ul>
@@ -148,6 +162,7 @@
         </div>
       </div>
 
+      {{-- Card kanan: form pengaturan --}}
       <div class="a-card">
         <div class="a-card-head">
           <div class="a-head-left">
@@ -158,7 +173,6 @@
             </div>
           </div>
         </div>
-
         <div class="a-card-body">
           <form class="a-form" action="{{ route('superadmin.akun.update') }}" method="POST" autocomplete="off">
             @csrf
@@ -170,7 +184,6 @@
                 <input type="text" name="name" value="{{ old('name', $name) }}" placeholder="Masukkan nama" required>
                 <div class="a-hint">Nama yang tampil di sistem.</div>
               </div>
-
               <div class="a-field">
                 <label class="a-label"><i class="bi bi-envelope"></i> Email / Akun</label>
                 <input type="email" name="email" value="{{ old('email', $email) }}" placeholder="Masukkan email" required>
@@ -202,7 +215,6 @@
                 </div>
                 <div class="a-hint">Minimal 8 karakter.</div>
               </div>
-
               <div class="a-field">
                 <label class="a-label"><i class="bi bi-lock-fill"></i> Konfirmasi Password</label>
                 <div class="a-pass">
@@ -226,290 +238,173 @@
 </div>
 
 <style>
-  :root{
-    --sidebar:#1f5872;
-    --sidebar-dark:#18495e;
-    --yellow:#f6d80f;
-    --yellow-dark:#e0c300;
-    --text:#184d66;
-    --bg:#f5f7fa;
-    --line:#d8e3ea;
-  }
-
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:'Nunito';
-    background:var(--bg);
-    color:#1e293b;
-  }
-.dash-sub{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  padding-left:12px;
-  margin-top:4px;
-}
-
-.dash-sub-link{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  color:rgba(255,255,255,.8);
-  text-decoration:none;
-  padding:8px 12px;
-  border-radius:8px;
-  font-size:14px;
-  transition:.2s;
-}
-
-.dash-sub-link:hover{
-  background:rgba(255,255,255,.08);
-  color:#fff;
-}
-
-.dash-sub-link.active{
-  background:#f6c100;
-  color:#184f61;
-  font-weight:700;
-}
-  .dash-main{
-    flex:1;
-    padding:28px 34px;
-    
-.dash-header {
+/* ── Accordion sidebar ── */
+.dash-link-accordion {
   width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,.92);
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
   display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 12px;
+  border-radius: 10px;
+  transition: background .15s;
+}
+.dash-link-accordion:hover { background: rgba(255,255,255,.08); }
+.dash-link-accordion.active { background: #f6c100; color: #0f172a; }
+
+.dash-chevron {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform .2s ease;
+}
+.dash-link-accordion.is-open .dash-chevron { transform: rotate(180deg); }
+
+.dash-sub {
+  display: none;
   flex-direction: column;
   gap: 4px;
+  padding-left: 14px;
+  margin-top: 2px;
 }
+.dash-sub.is-open { display: flex; }
 
-.dash-header h1 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 600;
-  color: #184f61;
-}
-
-.dash-header p {
-  margin: 0;
+.dash-sub-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,.80);
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 8px;
   font-size: 15px;
-  color: #64748b;
   font-weight: 400;
+  transition: background .15s, color .15s;
+}
+.dash-sub-link .ic { width: 16px; text-align: center; }
+.dash-sub-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+.dash-sub-link.active { background: #f6c100; color: #0f172a; }
+
+/* ── Header ── */
+.dash-header { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
+.dash-header h1 { margin: 0; font-size: 26px; font-weight: 600; color: #184f61; }
+.dash-header p  { margin: 0; font-size: 15px; color: #64748b; font-weight: 400; }
+
+/* ── Alerts ── */
+.a-alert { margin-bottom: 16px; border-radius: 14px; border: 1px solid #e6eef2; background: #fff; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+.a-alert--ok  { border-left: 4px solid #16a34a; }
+.a-alert--err { border-left: 4px solid #dc2626; }
+.a-errlist { margin: 6px 0 0; padding-left: 18px; }
+
+/* ── Grid ── */
+.a-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; }
+
+/* ── Card ── */
+.a-card { background: #fff; border: 1px solid #e6eef2; border-radius: 22px; overflow: hidden; box-shadow: 0 8px 24px rgba(15,23,42,.05); min-height: 580px; }
+.a-card-head { background: #1f5872; color: #fff; padding: 16px 18px; }
+.a-head-left { display: flex; align-items: center; gap: 14px; }
+.a-ico { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.18); font-size: 22px; }
+.a-head-text .t1 { font-size: 18px; font-weight: 700; }
+.a-head-text .t2 { font-size: 14px; opacity: .9; margin-top: 3px; }
+.a-card-body { padding: 18px; }
+
+/* ── Profile ── */
+.a-profile { display: flex; align-items: center; gap: 14px; }
+.a-avatar { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; background: #d9edf3; color: #184d66; font-size: 34px; }
+.a-name { font-size: 20px; font-weight: 700; color: #0f172a; }
+.a-pills { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.a-pill { display: inline-flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 999px; background: #f8fafc; border: 1px solid #e5e7eb; color: #475569; }
+
+/* ── Tips ── */
+.a-tips { margin-top: 18px; border: 1px dashed #cfe2ea; border-radius: 18px; padding: 14px 16px; background: #fbfeff; }
+.a-tip-title { font-size: 15px; font-weight: 700; color: #184d66; margin-bottom: 10px; }
+.a-tips ul { margin: 0; padding-left: 18px; line-height: 1.8; }
+
+/* ── Form ── */
+.a-form { display: flex; flex-direction: column; gap: 16px; }
+.a-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.a-field { display: flex; flex-direction: column; gap: 8px; }
+.a-label { font-size: 15px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 8px; }
+
+.a-field input[type="text"],
+.a-field input[type="email"] {
+  height: 58px; border-radius: 16px; border: 1px solid #d7dee7;
+  padding: 0 16px; font-size: 16px; font-family: inherit; outline: none;
 }
 
-  .a-alert{
-    margin-bottom:16px;
-    border-radius:14px;
-    border:1px solid #e6eef2;
-    background:#fff;
-    padding:12px 14px;
-    display:flex;
-    gap:10px;
-    align-items:flex-start;
-  }
-  .a-alert--ok{border-left:4px solid #16a34a}
-  .a-alert--err{border-left:4px solid #dc2626}
-  .a-errlist{margin:6px 0 0;padding-left:18px}
+.a-pass { height: 58px; border: 1px solid #d7dee7; border-radius: 16px; display: flex; align-items: center; overflow: hidden; }
+.a-pass input { flex: 1; height: 100%; border: 0; outline: none; padding: 0 16px; font-size: 16px; font-family: inherit; }
+.a-eye { width: 58px; height: 100%; border: 0; border-left: 1px solid #d7dee7; background: #f8fafc; cursor: pointer; font-size: 20px; }
 
-  .a-grid{
-    display:grid;
-    grid-template-columns:1fr 1.2fr;
-    gap:18px;
-  }
+.a-hint { font-size: 14px; color: #64748b; }
+.a-sep  { height: 1px; background: #e6eef2; margin: 4px 0; }
 
-  .a-card{
-    background:#fff;
-    border:1px solid #e6eef2;
-    border-radius:22px;
-    overflow:hidden;
-    box-shadow:0 8px 24px rgba(15,23,42,.05);
-    min-height:580px;
-  }
-  .a-card-head{
-    background:var(--sidebar);
-    color:#fff;
-    padding:16px 18px;
-  }
-  .a-head-left{
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .a-ico{
-    width:48px;height:48px;border-radius:14px;
-    display:grid;place-items:center;
-    background:rgba(255,255,255,.16);
-    border:1px solid rgba(255,255,255,.18);
-    font-size:22px;
-  }
-  .a-head-text .t1{font-size:18px;font-weight:700}
-  .a-head-text .t2{font-size:14px;opacity:.9;margin-top:3px}
+.a-actions { display: flex; justify-content: flex-end; margin-top: 6px; }
+.a-btn { border: 0; height: 52px; padding: 0 24px; border-radius: 16px; font-size: 16px; font-family: inherit; cursor: pointer; }
+.a-btn--primary { background: #f6c100; color: #111827; font-weight: 700; }
 
-  .a-card-body{padding:18px}
+.dash-sidebar {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-  .a-profile{
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .a-avatar{
-    width:72px;height:72px;border-radius:20px;
-    display:grid;place-items:center;
-    background:#d9edf3;color:#184d66;
-    font-size:34px;
-  }
-  .a-name{font-size:20px;font-weight:700;color:#0f172a}
-  .a-pills{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
-  .a-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:12px 14px;
-    border-radius:999px;
-    background:#f8fafc;
-    border:1px solid #e5e7eb;
-    color:#475569;
-  }
+.dash-nav {
+  flex: 1;
+  overflow-y: auto;
+}
 
-  .a-tips{
-    margin-top:18px;
-    border:1px dashed #cfe2ea;
-    border-radius:18px;
-    padding:14px 16px;
-    background:#fbfeff;
-  }
-  .a-tip-title{
-    font-size:15px;
-    font-weight:700;
-    color:#184d66;
-    margin-bottom:10px;
-  }
-  .a-tips ul{
-    margin:0;
-    padding-left:18px;
-    line-height:1.8;
-  }
+.dash-side-actions {
+  margin-top: auto;
+}
 
-  .a-form{display:flex;flex-direction:column;gap:16px}
-  .a-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .a-field{display:flex;flex-direction:column;gap:8px}
-  .a-label{
-    font-size:15px;
-    font-weight:700;
-    color:#334155;
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
+.dash-nav::-webkit-scrollbar {
+  width: 6px;
+}
 
-  .a-field input[type="text"],
-  .a-field input[type="email"]{
-    height:58px;
-    border-radius:16px;
-    border:1px solid #d7dee7;
-    padding:0 16px;
-    font-size:16px;
-    font-family:inherit;
-    outline:none;
-  }
+.dash-nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+}
 
-  .a-pass{
-    height:58px;
-    border:1px solid #d7dee7;
-    border-radius:16px;
-    display:flex;
-    align-items:center;
-    overflow:hidden;
-  }
-  .a-pass input{
-    flex:1;
-    height:100%;
-    border:0;
-    outline:none;
-    padding:0 16px;
-    font-size:16px;
-    font-family:inherit;
-  }
-  .a-eye{
-    width:58px;
-    height:100%;
-    border:0;
-    border-left:1px solid #d7dee7;
-    background:#f8fafc;
-    cursor:pointer;
-    font-size:20px;
-  }
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear { display: none !important; }
 
-  .a-hint{font-size:14px;color:#64748b}
-  .a-sep{height:1px;background:#e6eef2;margin:4px 0}
-
-  .a-actions{
-    display:flex;
-    justify-content:flex-end;
-    margin-top:6px;
-  }
-  .a-btn{
-    border:0;
-    height:52px;
-    padding:0 24px;
-    border-radius:16px;
-    font-size:16px;
-    font-family:inherit;
-    cursor:pointer;
-  }
-  .a-btn--primary{
-    background:#f2c200;
-    color:#111827;
-    font-weight:700;
-  }
-
-  input[type="password"]::-ms-reveal,
-  input[type="password"]::-ms-clear{
-    display:none !important;
-  }
-
-  @media(max-width:1100px){
-    .a-grid{grid-template-columns:1fr}
-    .dash-sidebar{width:250px}
-  }
-
-  @media(max-width:860px){
-    .dash-wrap{flex-direction:column}
-    .dash-sidebar{width:100%}
-    .dash-main{padding:20px}
-    .a-row{grid-template-columns:1fr}
-  }
+/* ── Responsive ── */
+@media (max-width: 1100px) { .a-grid { grid-template-columns: 1fr; } }
+@media (max-width: 860px)  { .a-row { grid-template-columns: 1fr; } }
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    document.querySelectorAll('[data-eye]').forEach(btn => {
-      btn.addEventListener('click', function(){
-        const id = btn.getAttribute('data-eye');
-        const input = document.getElementById(id);
-        if(!input) return;
-
-        const isPw = input.type === 'password';
-        input.type = isPw ? 'text' : 'password';
-
-        const ico = btn.querySelector('i');
-        if(ico){
-          ico.className = isPw ? 'bi bi-eye-slash' : 'bi bi-eye';
-        }
-      });
+document.addEventListener('DOMContentLoaded', function(){
+  /* Toggle show/hide password */
+  document.querySelectorAll('[data-eye]').forEach(btn => {
+    btn.addEventListener('click', function(){
+      const input = document.getElementById(btn.dataset.eye);
+      if(!input) return;
+      const isPw = input.type === 'password';
+      input.type = isPw ? 'text' : 'password';
+      const ico = btn.querySelector('i');
+      if(ico) ico.className = isPw ? 'bi bi-eye-slash' : 'bi bi-eye';
     });
-
-    const parent = document.getElementById('kelolaAkunParent');
-    const sub = document.getElementById('kelolaAkunSub');
-
-    if(parent && sub){
-      parent.addEventListener('click', function(){
-        sub.style.display = (sub.style.display === 'none') ? 'flex' : 'none';
-        parent.classList.toggle('is-open');
-      });
-    }
   });
+
+  /* Accordion Kelola Akun */
+  const parent = document.getElementById('kelolaAkunParent');
+  const sub    = document.getElementById('kelolaAkunSub');
+  if(parent && sub){
+    parent.addEventListener('click', function(){
+  sub.classList.toggle('is-open');
+  parent.classList.toggle('is-open');
+});
+  }
+});
 </script>
 </body>
 </html>

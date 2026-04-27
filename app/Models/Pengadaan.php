@@ -22,7 +22,8 @@ class Pengadaan extends Model
         'id_rup',
         'jenis_pengadaan',
         'status_pekerjaan',
-
+        'metode_pengadaan',
+        
         // B. Status Akses Arsip
         'status_arsip',
 

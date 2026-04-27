@@ -149,16 +149,25 @@
 
           {{-- ✅ HANYA FILTER TAHUN (unit dihilangkan) --}}
           <div class="u-card-filter">
-            <div class="u-mini-select">
-              <select id="fTahunPaket">
-                <option value="">Semua Tahun</option>
-                @foreach($tahunOptions as $t)
-                  <option value="{{ $t }}">{{ $t }}</option>
-                @endforeach
-              </select>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-          </div>
+  <div class="u-mini-select">
+    <select id="fTahunPaket">
+      <option value="">Semua Tahun</option>
+      @foreach($tahunOptions as $t)
+        <option value="{{ $t }}">{{ $t }}</option>
+      @endforeach
+    </select>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="u-mini-select">
+    <select id="fUnitPaket">
+      <option value="">Semua Unit</option>
+      @foreach($unitOptions as $u)
+        <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
+      @endforeach
+    </select>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+</div>
         </div>
 
         {{-- 5: Total Nilai Pengadaan --}}
@@ -175,16 +184,25 @@
 
           {{-- ✅ HANYA FILTER TAHUN (unit dihilangkan) --}}
           <div class="u-card-filter">
-            <div class="u-mini-select">
-              <select id="fTahunNilai">
-                <option value="">Semua Tahun</option>
-                @foreach($tahunOptions as $t)
-                  <option value="{{ $t }}">{{ $t }}</option>
-                @endforeach
-              </select>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-          </div>
+  <div class="u-mini-select">
+    <select id="fTahunNilai">
+      <option value="">Semua Tahun</option>
+      @foreach($tahunOptions as $t)
+        <option value="{{ $t }}">{{ $t }}</option>
+      @endforeach
+    </select>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="u-mini-select">
+    <select id="fUnitNilai">
+      <option value="">Semua Unit</option>
+      @foreach($unitOptions as $u)
+        <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
+      @endforeach
+    </select>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+</div>
         </div>
       </div>
     </section>
@@ -360,15 +378,24 @@
   .u-label,.u-value,.u-money,.u-sub,.u-chart-title,.u-select select{ font-weight:400 !important; }
 
   .u-card{ position:relative; }
-  .u-card-filter{ position:absolute; right:12px; bottom:10px; }
+  .u-card-filter{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:flex-end;
+  margin-top:10px;
+  flex-wrap:wrap;
+}
 
   .u-mini-select{ position:relative; }
-  .u-mini-select select{
-    border:1px solid #e2e8f0; border-radius:10px;
-    padding:8px 32px 8px 12px;
-    font-family:inherit; font-size:14px; font-weight:400 !important;
-    background:#fff; outline:none; appearance:none; cursor:pointer;
-  }
+ .u-mini-select select{
+  border:1px solid #e2e8f0; border-radius:10px;
+  padding:6px 28px 6px 10px;
+  font-family:inherit; font-size:13px; font-weight:400 !important;
+  background:#fff; outline:none; appearance:none; cursor:pointer;
+  max-width:130px;
+  width:100%;
+}
   .u-mini-select i{
     position:absolute; right:10px; top:50%;
     transform:translateY(-50%);
@@ -475,7 +502,11 @@
   }
   .u-info-btn:hover{ border-color:#143f4d; transform:translateY(-.5px); }
 
-  .u-info-btn--card{ position:absolute; right:12px; bottom:10px; top:auto; }
+ .u-info-btn--card{ 
+  position:absolute; 
+  right:12px; 
+  top:12px;
+}
 
   .u-popover{
     position:absolute; right:0; top:30px;
@@ -654,7 +685,22 @@
     .u-charts{ grid-template-columns:1fr; }
     .u-money,.u-value{ font-size:28px; }
 
-    .u-card-filter{ right:10px; bottom:10px; }
+    .u-card-filter{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:nowrap;
+  margin-top:10px;
+  padding-top:8px;
+  border-top:1px solid #f1f5f9;
+}
+
+.u-sum-row--2 .u-card{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
 
     .u-modal-dialog{ width:calc(100vw - 26px); height:88vh; }
     .u-unit-grid{ grid-template-columns:1fr; }
@@ -1098,70 +1144,74 @@
     // =========================
     // KARTU PAKET + NILAI (HANYA FILTER TAHUN)
     // =========================
-    const fPaketTahun  = document.getElementById('fTahunPaket');
-    const fNilaiTahun  = document.getElementById('fTahunNilai');
+const fPaketTahun = document.getElementById('fTahunPaket');
+const fUnitPaket  = document.getElementById('fUnitPaket');
+const fNilaiTahun = document.getElementById('fTahunNilai');
+const fNilaiUnit  = document.getElementById('fUnitNilai');
 
-    const elPaket = document.getElementById('valPaket');
-    const elNilai = document.getElementById('valNilai');
+const elPaket = document.getElementById('valPaket');
+const elNilai = document.getElementById('valNilai');
 
-    const basePaket = Number(elPaket?.getAttribute('data-count') || 0);
-    const baseNilai = Number(elNilai?.getAttribute('data-count') || 0);
+const basePaket = Number(elPaket?.getAttribute('data-count') || 0);
+const baseNilai = Number(elNilai?.getAttribute('data-count') || 0);
 
-    const setIfDifferent = (el, nextNumber) => {
-      if(!el) return false;
-      const current = Number(String(el.getAttribute('data-count') || '').replace(/[^\d.-]/g,'') || 0);
-      if(current === Number(nextNumber || 0)) return false;
-      el.setAttribute('data-count', String(nextNumber || 0));
-      return true;
-    };
+const setIfDifferent = (el, nextNumber) => {
+  if(!el) return false;
+  const current = Number(String(el.getAttribute('data-count') || '').replace(/[^\d.-]/g,'') || 0);
+  if(current === Number(nextNumber || 0)) return false;
+  el.setAttribute('data-count', String(nextNumber || 0));
+  return true;
+};
 
-    const applyPaketFilter = async () => {
-      const tahun = (fPaketTahun?.value || '');
-      if(!elPaket) return;
+const applyPaketFilter = async () => {
+  const tahun   = (fPaketTahun?.value || '');
+  const unit_id = (fUnitPaket?.value  || '');
+  if(!elPaket) return;
 
-      // default = semua tahun
-      if(tahun === ''){
-        if(setIfDifferent(elPaket, basePaket)){
-          CountFX.rerunTo(elPaket, basePaket);
-        }
-        return;
-      }
+  if(tahun === '' && unit_id === ''){
+    if(setIfDifferent(elPaket, basePaket)){
+      CountFX.rerunTo(elPaket, basePaket);
+    }
+    return;
+  }
 
-      try{
-        const stats = await fetchStats({ tahun });
-        const next = Number(stats?.paket?.count || 0);
-        if(setIfDifferent(elPaket, next)){
-          CountFX.rerunTo(elPaket, next);
-        }
-      }catch(e){}
-    };
+  try{
+    const stats = await fetchStats({ tahun, unit_id });
+    const next  = Number(stats?.paket?.count || 0);
+    if(setIfDifferent(elPaket, next)){
+      CountFX.rerunTo(elPaket, next);
+    }
+  }catch(e){}
+};
 
-    const applyNilaiFilter = async () => {
-      const tahun = (fNilaiTahun?.value || '');
-      if(!elNilai) return;
+const applyNilaiFilter = async () => {
+  const tahun   = (fNilaiTahun?.value || '');
+  const unit_id = (fNilaiUnit?.value  || '');
+  if(!elNilai) return;
 
-      // default = semua tahun
-      if(tahun === ''){
-        if(setIfDifferent(elNilai, baseNilai)){
-          CountFX.rerunTo(elNilai, baseNilai);
-        }
-        return;
-      }
+  if(tahun === '' && unit_id === ''){
+    if(setIfDifferent(elNilai, baseNilai)){
+      CountFX.rerunTo(elNilai, baseNilai);
+    }
+    return;
+  }
 
-      try{
-        const stats = await fetchStats({ tahun });
-        const sum = Number(stats?.nilai?.sum || 0);
-        if(setIfDifferent(elNilai, sum)){
-          CountFX.rerunTo(elNilai, sum);
-        }
-      }catch(e){}
-    };
+  try{
+    const stats = await fetchStats({ tahun, unit_id });
+    const sum   = Number(stats?.nilai?.sum || 0);
+    if(setIfDifferent(elNilai, sum)){
+      CountFX.rerunTo(elNilai, sum);
+    }
+  }catch(e){}
+};
 
-    if(fPaketTahun) fPaketTahun.addEventListener('change', applyPaketFilter);
-    if(fNilaiTahun) fNilaiTahun.addEventListener('change', applyNilaiFilter);
+if(fPaketTahun) fPaketTahun.addEventListener('change', applyPaketFilter);
+if(fUnitPaket)  fUnitPaket.addEventListener('change', applyPaketFilter);
+if(fNilaiTahun) fNilaiTahun.addEventListener('change', applyNilaiFilter);
+if(fNilaiUnit)  fNilaiUnit.addEventListener('change', applyNilaiFilter);
 
-    if(fPaketTahun) fPaketTahun.value = '';
-    if(fNilaiTahun) fNilaiTahun.value = '';
+if(fPaketTahun) fPaketTahun.value = '';
+if(fNilaiTahun) fNilaiTahun.value = '';
 
     // refresh detail jika popover dibuka
     const popDonut = document.getElementById('popDonut');

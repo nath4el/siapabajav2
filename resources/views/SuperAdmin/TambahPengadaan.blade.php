@@ -27,13 +27,13 @@
     "Pengadaan Jasa Lainnya",
   ];
 
-  $metodePengadaanOptions = $metodePengadaanOptions ?? [
-  "Pengadaan Langsung",
-  "Penunjukan Langsung",
-  "E-Purchasing / E-Catalogue",
-  "Tender Terbatas",
-  "Tender Terbuka",
-  "Swakelola",
+$metodePengadaanOptions = [
+  'Pengadaan Langsung',
+  'Penunjukan Langsung',
+  'E-Purchasing / E-Catalogue',
+  'Tender Terbatas',
+  'Tender Terbuka',
+  'Swakelola',
 ];
   $statusPekerjaanOptions = $statusPekerjaanOptions ?? ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
 
@@ -81,56 +81,65 @@
 
 <div class="dash-wrap">
   <aside class="dash-sidebar">
-    <div class="dash-brand">
-      <div class="dash-logo">
-        <img src="{{ asset('image/Logo_Unsoed.png') }}" alt="Logo Unsoed">
-      </div>
-
-      <div class="dash-text">
-        <div class="dash-app">SIAPABAJA</div>
-        <div class="dash-role">Super Admin</div>
-      </div>
+  <div class="dash-brand">
+    <div class="dash-logo">
+      <img src="{{ asset('image/Logo_Unsoed.png') }}" alt="Logo Unsoed">
     </div>
-
-    <nav class="dash-nav">
-      <a class="dash-link" href="{{ route('superadmin.dashboard') }}">
-        <span class="ic"><i class="bi bi-grid-fill"></i></span>
-        Dashboard
-      </a>
-
-      <a class="dash-link" href="{{ route('superadmin.arsip') }}">
-        <span class="ic"><i class="bi bi-archive"></i></span>
-        Arsip PBJ
-      </a>
-
-      <a class="dash-link active" href="{{ route('superadmin.pengadaan.create') }}">
-        <span class="ic"><i class="bi bi-plus-square"></i></span>
-        Tambah Pengadaan
-      </a>
-
-      <a class="dash-link" href="{{ route('superadmin.kelola.menu') }}">
-        <span class="ic"><i class="bi bi-gear-fill"></i></span>
-        Kelola Menu
-      </a>
-
-      <a class="dash-link {{ request()->routeIs('superadmin.kelola.akun') ? 'active' : '' }}" href="{{ route('superadmin.kelola.akun') }}">
-        <span class="ic"><i class="bi bi-person-gear"></i></span>
-        Kelola Akun
-      </a>
-    </nav>
-
-    <div class="dash-side-actions">
-      <a class="dash-side-btn" href="{{ route('home') }}">
-        <i class="bi bi-house-door"></i>
-        Kembali
-      </a>
-
-      <a class="dash-side-btn" href="{{ url('/logout') }}">
-        <i class="bi bi-box-arrow-right"></i>
-        Keluar
-      </a>
+    <div class="dash-text">
+      <div class="dash-app">SIAPABAJA</div>
+      <div class="dash-role">Super Admin</div>
     </div>
-  </aside>
+  </div>
+
+  <nav class="dash-nav">
+    <!-- Dashboard -->
+    <a class="dash-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}"
+       href="{{ route('superadmin.dashboard') }}">
+      <span class="ic"><i class="bi bi-grid-fill"></i></span>
+      Dashboard
+    </a>
+
+    <!-- Arsip -->
+    <a class="dash-link {{ request()->routeIs('superadmin.arsip*') ? 'active' : '' }}"
+       href="{{ route('superadmin.arsip') }}">
+      <span class="ic"><i class="bi bi-archive"></i></span>
+      Arsip PBJ
+    </a>
+
+    <!-- Tambah Pengadaan -->
+    <a class="dash-link {{ request()->routeIs('superadmin.pengadaan.create') ? 'active' : '' }}"
+       href="{{ route('superadmin.pengadaan.create') }}">
+      <span class="ic"><i class="bi bi-plus-square"></i></span>
+      Tambah Pengadaan
+    </a>
+
+    <!-- Kelola Menu -->
+    <a class="dash-link {{ request()->routeIs('superadmin.kelola.menu') ? 'active' : '' }}"
+       href="{{ route('superadmin.kelola.menu') }}">
+      <span class="ic"><i class="bi bi-gear-fill"></i></span>
+      Kelola Menu
+    </a>
+
+    <!-- Kelola Akun -->
+    <a class="dash-link {{ request()->routeIs('superadmin.kelola.akun*') ? 'active' : '' }}"
+       href="{{ route('superadmin.kelola.akun') }}">
+      <span class="ic"><i class="bi bi-person-gear"></i></span>
+      Kelola Akun
+    </a>
+  </nav>
+
+  <div class="dash-side-actions">
+    <a class="dash-side-btn" href="{{ route('home') }}">
+      <i class="bi bi-house-door"></i>
+      Kembali
+    </a>
+
+    <a class="dash-side-btn" href="{{ url('/logout') }}">
+      <i class="bi bi-box-arrow-right"></i>
+      Keluar
+    </a>
+  </div>
+</aside>
 
   <main class="dash-main">
     <header class="dash-header">
@@ -387,7 +396,7 @@
 </div>
 
 <style>
-  .dash-body{ font-size: 18px; line-height: 1.6; font-weight: 400; }
+  .dash-body{ font-size: 16px; line-height: 1.6; font-weight: 400; }
   .dash-app{ font-weight: 700 !important; }
 
   /* ================= HEADER (SAMA DENGAN DASHBOARD) ================= */
@@ -429,22 +438,19 @@
     }
 }
 
-  .dash-role,.dash-unit-label,.dash-unit-name,.dash-link,.dash-side-btn,.dash-header p,
-  .tp-section-title,.tp-badge,.tp-label,.tp-input,.tp-select,.tp-actions .tp-btn,.tp-help,
-  .tp-radio-card,.tp-radio-text,.tp-acc-head,.tp-upload-label,.tp-drop-title,.tp-drop-sub,
-  .tp-drop-meta,.tp-drop-btn,.tp-preview-title,.tp-acc-count{
-    font-weight: 700 !important;
-  }
-
-  .dash-sidebar {
-  width: 260px;
-  height: 100vh;
-  background: #184f61;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
+.dash-link {
+  font-weight: 600;
 }
+
+.dash-side-btn {
+  font-weight: 600;
+}
+
+.tp-label {
+  font-weight: 500;
+}
+
+
 
   .dash-side-actions{
     margin-top:auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.12);

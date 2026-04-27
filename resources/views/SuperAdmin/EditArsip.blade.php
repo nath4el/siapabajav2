@@ -25,13 +25,20 @@
   $unitOptions = $unitOptions ?? [];
 
   $jenisPengadaanOptions = $jenisPengadaanOptions ?? [
-    "Pengadaan Langsung",
-    "Penunjukan Langsung",
-    "E-Purchasing / E-Catalog",
-    "Tender Terbatas",
-    "Tender Terbuka",
-    "Swakelola",
-  ];
+  "Pengadaan Barang",
+  "Pengadaan Pekerjaan Konstruksi",
+  "Pengadaan Jasa Konsultasi",
+  "Pengadaan Jasa Lainnya",
+];
+
+$metodePengadaanOptions = $metodePengadaanOptions ?? [
+    'Pengadaan Langsung',
+    'Penunjukan Langsung',
+    'E-Purchasing / E-Catalogue',
+    'Tender Terbatas',
+    'Tender Terbuka',
+    'Swakelola',
+];
   $statusPekerjaanOptions = $statusPekerjaanOptions ?? ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
 
   $get = function($source, string $key){
@@ -159,42 +166,44 @@
 @endphp
 
 <div class="dash-wrap">
-  <aside class="dash-sidebar">
+ <aside class="dash-sidebar">
     <div class="dash-brand">
       <div class="dash-logo">
         <img src="{{ asset('image/Logo_Unsoed.png') }}" alt="Logo Unsoed">
       </div>
-
       <div class="dash-text">
         <div class="dash-app">SIAPABAJA</div>
         <div class="dash-role">Super Admin</div>
       </div>
     </div>
 
-
-
     <nav class="dash-nav">
-      <a class="dash-link" href="{{ route('superadmin.dashboard') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}"
+         href="{{ route('superadmin.dashboard') }}">
         <span class="ic"><i class="bi bi-grid-fill"></i></span>
         Dashboard
       </a>
 
-      <a class="dash-link active" href="{{ route('superadmin.arsip') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.arsip*') ? 'active' : '' }}"
+         href="{{ route('superadmin.arsip') }}">
         <span class="ic"><i class="bi bi-archive"></i></span>
         Arsip PBJ
       </a>
 
-      <a class="dash-link" href="{{ route('superadmin.pengadaan.create') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.pengadaan.create') ? 'active' : '' }}"
+         href="{{ route('superadmin.pengadaan.create') }}">
         <span class="ic"><i class="bi bi-plus-square"></i></span>
         Tambah Pengadaan
       </a>
 
-      <a class="dash-link" href="{{ route('superadmin.kelola.menu') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.kelola.menu') ? 'active' : '' }}"
+         href="{{ route('superadmin.kelola.menu') }}">
         <span class="ic"><i class="bi bi-gear-fill"></i></span>
         Kelola Menu
       </a>
 
-      <a class="dash-link {{ request()->routeIs('superadmin.kelola.akun') ? 'active' : '' }}" href="{{ route('superadmin.kelola.akun') }}">
+      <a class="dash-link {{ request()->routeIs('superadmin.kelola.akun') ? 'active' : '' }}"
+         href="{{ route('superadmin.kelola.akun') }}">
         <span class="ic"><i class="bi bi-person-gear"></i></span>
         Kelola Akun
       </a>
@@ -295,18 +304,19 @@
                 </div>
               </div>
 
-              <div class="tp-field">
+             <div class="tp-field">
   <label class="tp-label">Metode Pengadaan</label>
   <div class="tp-control">
     <select name="metode_pengadaan" class="tp-select" required>
-      <option value="" selected disabled hidden>Pilih Metode Pengadaan</option>
+      <option value="" {{ $val('metode_pengadaan',['metode_pengadaan']) ? '' : 'selected' }} disabled hidden>Pilih Metode Pengadaan</option>
       @foreach($metodePengadaanOptions as $mp)
-        <option value="{{ $mp }}">{{ $mp }}</option>
+        <option value="{{ $mp }}" @selected((string)$val('metode_pengadaan',['metode_pengadaan']) === (string)$mp)>{{ $mp }}</option>
       @endforeach
     </select>
     <i class="bi bi-chevron-down tp-icon"></i>
   </div>
 </div>
+
 
               <div class="tp-field">
                 <label class="tp-label">Status Pekerjaan</label>
@@ -573,7 +583,39 @@
     font-weight: 700 !important;
   }
 
-  .dash-sidebar{ display:flex; flex-direction:column; }
+.dash-side-actions{
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.12);
+  display: grid;
+  gap: 10px;
+}
+
+.dash-sidebar{
+  position: fixed;
+  left: 0; top: 0;
+  height: 100vh;
+  width: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-main {
+  padding: 28px 28px 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-header {
+  width: 100%;
+}
+
+.tp-form {
+  width: 100%;
+}
   .dash-side-actions{
     margin-top:auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.12);
     display:grid; gap: 10px;

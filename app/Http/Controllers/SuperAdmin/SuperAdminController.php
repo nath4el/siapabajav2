@@ -71,7 +71,7 @@ class SuperAdminController extends Controller
             ["label" => "Arsip Private", "value" => $privat, "accent" => "gray", "icon" => "bi-eye-slash"],
             ["label" => "Total PPK", "value" => $totalPpk, "accent" => "green", "icon" => "bi-building"],
             ["label" => "Total Unit Kerja", "value" => $totalUnitKerja, "accent" => "yellow", "icon" => "bi-buildings"],
-            ["label" => "Total Paket Pengadaan", "value" => $paketAll, "accent" => "navy", "icon" => "bi-file-earmark-text", "sub" => "Paket Pengadaan Barang dan Jasa"],
+            ["label" => "Total Arsip Pengadaan", "value" => $paketAll, "accent" => "navy", "icon" => "bi-file-earmark-text", "sub" => "Paket Pengadaan Barang dan Jasa"],
             ["label" => "Total Nilai Pengadaan", "value" => $this->formatRupiahNumber($nilaiAll), "accent" => "yellow", "icon" => "bi-buildings", "sub" => "Nilai Kontrak Pengadaan"],
         ];
 
@@ -263,26 +263,29 @@ class SuperAdminController extends Controller
 
         $arsips = $arsipsQuery->paginate(10)->withQueryString();
 
-        $mapped = $arsips->getCollection()->map(function (Pengadaan $p) {
-            return [
-                'id' => $p->id,
-                'pekerjaan' => ($p->nama_pekerjaan ?? '-'),
-                'id_rup' => $p->id_rup ?? '-',
-                'tahun' => $p->tahun ?? null,
-                'metode_pbj' => $p->jenis_pengadaan ?? '-',
-                'jenis_pengadaan' => $p->jenis_pengadaan ?? '-',
-                'status_pekerjaan' => $p->status_pekerjaan ?? '-',
-                'status_arsip' => $p->status_arsip ?? '-',
-                'nilai_kontrak' => $this->formatRupiah($p->nilai_kontrak),
-                'pagu_anggaran' => $this->formatRupiah($p->pagu_anggaran),
-                'hps' => $this->formatRupiah($p->hps),
-                'nama_rekanan' => $p->nama_rekanan ?? '-',
-                'unit' => $p->unit?->nama ?? ($p->unit?->nama_unit ?? ($p->unit?->name ?? '-')),
-                'dokumen' => $this->buildDokumenList($p),
-                'dokumen_tidak_dipersyaratkan' => $this->normalizeArray($p->dokumen_tidak_dipersyaratkan),
-            ];
-        });
-
+       $mapped = $arsips->getCollection()->map(function (Pengadaan $p) {
+    return [
+        'id'                => $p->id,
+        'pekerjaan'         => $p->nama_pekerjaan ?? '-',
+        'id_rup'            => $p->id_rup ?? '-',
+        'idrup'             => $p->id_rup ?? '-',
+        'tahun'             => $p->tahun ?? null,
+        'metode_pbj'        => $p->metode_pengadaan ?? '-',  // ← key harus metode_pbj
+        'jenis_pengadaan'   => $p->jenis_pengadaan ?? '-',
+        'jenis'             => $p->jenis_pengadaan ?? '-',   // ← tambahkan ini
+        'status_pekerjaan'  => $p->status_pekerjaan ?? '-',
+        'status_arsip'      => $p->status_arsip ?? '-',
+        'nilai_kontrak'     => $this->formatRupiah($p->nilai_kontrak),
+        'pagu'              => $this->formatRupiah($p->pagu_anggaran), // ← key harus pagu
+        'pagu_anggaran'     => $this->formatRupiah($p->pagu_anggaran),
+        'hps'               => $this->formatRupiah($p->hps),
+        'nama_rekanan'      => $p->nama_rekanan ?? '-',
+        'rekanan'           => $p->nama_rekanan ?? '-',      // ← tambahkan ini
+        'unit'              => $p->unit?->nama ?? ($p->unit?->nama_unit ?? ($p->unit?->name ?? '-')),
+        'dokumen'           => $this->buildDokumenList($p),
+        'dokumen_tidak_dipersyaratkan' => $this->normalizeArray($p->dokumen_tidak_dipersyaratkan),
+    ];
+});
         $arsips->setCollection($mapped);
 
         $years = Pengadaan::whereNotNull('tahun')
@@ -348,25 +351,25 @@ class SuperAdminController extends Controller
 ];
 
 $metodePengadaanOptions = [
-    "Pengadaan Langsung",
-    "Penunjukan Langsung",
-    "E-Purchasing / E-Catalogue",
-    "Tender Terbatas",
-    "Tender Terbuka",
-    "Swakelola",
+  'Pengadaan Langsung',
+  'Penunjukan Langsung',
+  'E-Purchasing / E-Catalogue',
+  'Tender Terbatas',
+  'Tender Terbuka',
+  'Swakelola',
 ];
-
         $statusPekerjaanOptions = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
 
         return view('SuperAdmin.TambahPengadaan', compact(
-            'superAdminName',
-            'tahunOptions',
-            'units',
-            'unitNameCol',
-            'unitOptions',
-            'jenisPengadaanOptions',
-            'statusPekerjaanOptions'
-        ));
+    'superAdminName',
+    'tahunOptions',
+    'units',
+    'unitNameCol',
+    'unitOptions',
+    'jenisPengadaanOptions',
+    'metodePengadaanOptions', 
+    'statusPekerjaanOptions'
+));
     }
 
     public function pengadaanStore(Request $request)
@@ -378,6 +381,7 @@ $metodePengadaanOptions = [
             'nama_pekerjaan' => 'nullable|string|max:255',
             'id_rup' => 'nullable|string|max:255',
             'jenis_pengadaan' => 'required|string|max:100',
+            'metode_pengadaan' => 'required|string|max:100',
             'status_pekerjaan' => 'required|string|max:100',
             'status_arsip' => 'required|in:Publik,Privat',
             'pagu_anggaran' => 'nullable|string|max:50',
@@ -409,19 +413,20 @@ $metodePengadaanOptions = [
         };
 
         $payload = [
-            'tahun' => (int) $data['tahun'],
-            'unit_id' => (int) $resolvedUnitId,
-            'created_by' => Auth::id(),
-            'nama_pekerjaan' => $data['nama_pekerjaan'] ?? null,
-            'id_rup' => $data['id_rup'] ?? null,
-            'jenis_pengadaan' => $data['jenis_pengadaan'],
-            'status_pekerjaan' => $data['status_pekerjaan'],
-            'status_arsip' => $data['status_arsip'],
-            'pagu_anggaran' => $toInt($data['pagu_anggaran'] ?? null),
-            'hps' => $toInt($data['hps'] ?? null),
-            'nilai_kontrak' => $toInt($data['nilai_kontrak'] ?? null),
-            'nama_rekanan' => $data['nama_rekanan'] ?? null,
-        ];
+    'tahun'            => (int) $data['tahun'],
+    'unit_id'          => (int) $resolvedUnitId,
+    'created_by'       => Auth::id(),
+    'nama_pekerjaan'   => $data['nama_pekerjaan'] ?? null,
+    'id_rup'           => $data['id_rup'] ?? null,
+    'jenis_pengadaan'  => $data['jenis_pengadaan'],
+    'metode_pengadaan' => $data['metode_pengadaan'] ?? null,  // ← tambahkan ini
+    'status_pekerjaan' => $data['status_pekerjaan'],
+    'status_arsip'     => $data['status_arsip'],
+    'pagu_anggaran'    => $toInt($data['pagu_anggaran'] ?? null),
+    'hps'              => $toInt($data['hps'] ?? null),
+    'nilai_kontrak'    => $toInt($data['nilai_kontrak'] ?? null),
+    'nama_rekanan'     => $data['nama_rekanan'] ?? null,
+];
 
         $docTidak = [];
         if (is_array($request->input('dokumen_tidak_dipersyaratkan'))) {
@@ -560,6 +565,7 @@ $metodePengadaanOptions = [
             'nama_pekerjaan' => 'nullable|string|max:255',
             'id_rup' => 'nullable|string|max:255',
             'jenis_pengadaan' => 'nullable|string|max:100',
+            'metode_pengadaan' => 'nullable|string|max:100',
             'status_pekerjaan' => 'nullable|string|max:100',
             'status_arsip' => 'nullable|in:Publik,Privat',
             'pagu_anggaran' => 'nullable|string|max:50',
@@ -603,6 +609,7 @@ $metodePengadaanOptions = [
             if ($request->filled('nama_pekerjaan')) $pengadaan->nama_pekerjaan = $data['nama_pekerjaan'];
             if ($request->filled('id_rup')) $pengadaan->id_rup = $data['id_rup'];
             if ($request->filled('jenis_pengadaan')) $pengadaan->jenis_pengadaan = $data['jenis_pengadaan'];
+            if ($request->filled('metode_pengadaan')) {$pengadaan->metode_pengadaan = $data['metode_pengadaan'];}
             if ($request->filled('status_pekerjaan')) $pengadaan->status_pekerjaan = $data['status_pekerjaan'];
             if ($request->filled('status_arsip')) $pengadaan->status_arsip = $data['status_arsip'];
 
@@ -638,26 +645,36 @@ $metodePengadaanOptions = [
         }
     }
 
-    public function arsipDelete($id)
-    {
-        $pengadaan = Pengadaan::findOrFail($id);
+   public function arsipDelete($id)
+{
+    $pengadaan = Pengadaan::findOrFail($id);
 
-        DB::beginTransaction();
+    DB::beginTransaction();
+    try {
         try {
-            try {
-                Storage::disk('public')->deleteDirectory("pengadaan/{$pengadaan->id}");
-            } catch (\Throwable $e) {}
+            Storage::disk('public')->deleteDirectory("pengadaan/{$pengadaan->id}");
+        } catch (\Throwable $e) {}
 
-            $pengadaan->delete();
+        $pengadaan->delete();
 
-            DB::commit();
-            return redirect()->route('superadmin.arsip')->with('success', 'Arsip berhasil dihapus.');
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return redirect()->back()->withErrors(['delete' => 'Gagal menghapus arsip.']);
+        DB::commit();
+
+        // ✅ return JSON karena JS pakai fetch DELETE
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json(['success' => true]);
         }
-    }
+        return redirect()->route('superadmin.arsip')->with('success', 'Arsip berhasil dihapus.');
 
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        \Log::error('Delete arsip error: ' . $e->getMessage());
+
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        return redirect()->back()->withErrors(['delete' => 'Gagal menghapus arsip.']);
+    }
+}
     public function kelolaMenu()
     {
         $superAdminName = auth()->user()->name ?? "Super Admin";
@@ -723,37 +740,21 @@ public function kelolaAkunPpk()
 {
     $superAdminName = auth()->user()->name ?? 'Super Admin';
 
-    // Dummy data dulu, nanti bisa ambil dari database users role=ppk
-    $ppkAccounts = [
-        [
-            'username' => 'ppk_lppm',
-            'unit_kerja' => 'Lembaga Penjaminan Mutu dan Pengembangan Pembelajaran (LPMPP)',
-            'email' => 'ppk.lppm@unsoed.ac.id',
-            'password' => 'ppk_lppm',
-            'status' => 'Aktif',
-        ],
-        [
-            'username' => 'ppk_lppm',
-            'unit_kerja' => 'Lembaga Penjaminan Mutu dan Pengembangan Pembelajaran (LPMPP)',
-            'email' => 'ppk.lppm@unsoed.ac.id',
-            'password' => 'ppk_lppm',
-            'status' => 'Tidak Aktif',
-        ],
-        [
-            'username' => 'ppk_lppm',
-            'unit_kerja' => 'Lembaga Penjaminan Mutu dan Pengembangan Pembelajaran (LPMPP)',
-            'email' => 'ppk.lppm@unsoed.ac.id',
-            'password' => 'ppk_lppm',
-            'status' => 'Aktif',
-        ],
-        [
-            'username' => 'ppk_lppm',
-            'unit_kerja' => 'Lembaga Penjaminan Mutu dan Pengembangan Pembelajaran (LPMPP)',
-            'email' => 'ppk.lppm@unsoed.ac.id',
-            'password' => 'ppk_lppm',
-            'status' => 'Aktif',
-        ],
-    ];
+    $ppkAccounts = User::query()
+        ->whereRaw('LOWER(role) = ?', ['ppk'])
+        ->orderBy('id', 'desc')
+        ->get()
+        ->map(function ($user) {
+            return [
+                'id'         => $user->id,
+                'username'   => $user->name,
+                'unit_kerja' => $user->unit_kerja ?? '-',
+                'email'      => $user->email,
+                'password'   => '********',
+                'status'     => $user->status ?? 'Aktif',
+            ];
+        })
+        ->toArray();
 
     return view('SuperAdmin.KelolaAkunPpk', compact('superAdminName', 'ppkAccounts'));
 }
@@ -762,9 +763,18 @@ public function storePpk(Request $request)
     $request->validate([
         'username'   => ['required', 'string', 'max:255'],
         'unit_kerja' => ['required', 'string', 'max:255'],
-        'email'      => ['required', 'email', 'max:255'],
+        'email'      => ['required', 'email', 'max:255', 'unique:users,email'],
         'password'   => ['required', 'string', 'max:255'],
         'status'     => ['required', 'in:Aktif,Tidak Aktif'],
+    ]);
+
+    User::create([
+        'name'       => $request->username,
+        'unit_kerja' => $request->unit_kerja,
+        'email'      => $request->email,
+        'password'   => Hash::make($request->password),
+        'role'       => 'ppk',
+        'status'     => $request->status,
     ]);
 
     return redirect()
@@ -774,13 +784,27 @@ public function storePpk(Request $request)
 
 public function updatePpk(Request $request, $id)
 {
+    $user = User::whereRaw('LOWER(role) = ?', ['ppk'])->findOrFail($id);
+
     $request->validate([
         'username'   => ['required', 'string', 'max:255'],
         'unit_kerja' => ['required', 'string', 'max:255'],
-        'email'      => ['required', 'email', 'max:255'],
-        'password'   => ['required', 'string', 'max:255'],
+        'email'      => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        'password'   => ['nullable', 'string', 'max:255'],
         'status'     => ['required', 'in:Aktif,Tidak Aktif'],
     ]);
+
+    $user->name       = $request->username;
+    $user->unit_kerja = $request->unit_kerja;
+    $user->email      = $request->email;
+    $user->status     = $request->status;
+    $user->role       = 'ppk';
+
+    if (!empty($request->password)) {
+        $user->password = Hash::make($request->password);
+    }
+
+    $user->save();
 
     return redirect()
         ->route('superadmin.kelola.akun.ppk')
@@ -789,6 +813,9 @@ public function updatePpk(Request $request, $id)
 
 public function destroyPpk($id)
 {
+    $user = User::whereRaw('LOWER(role) = ?', ['ppk'])->findOrFail($id);
+    $user->delete();
+
     return redirect()
         ->route('superadmin.kelola.akun.ppk')
         ->with('success', 'Data admin PPK berhasil dihapus.');
@@ -938,7 +965,7 @@ public function destroyUnit($id)
         $raw = Pengadaan::query()
             ->when($unitId !== null, fn($q) => $q->where('unit_id', $unitId))
             ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
-            ->whereNotNull('jenis_pengadaan')
+            ->whereNotNull('metode_pengadaan')
             ->whereRaw("TRIM(jenis_pengadaan) <> ''")
             ->selectRaw("LOWER(TRIM(jenis_pengadaan)) as jp, COUNT(*) as cnt")
             ->groupBy('jp')
