@@ -608,7 +608,7 @@ html{
 /* ---------- RIGHT: Kontak (RAPAT TOTAL) ---------- */
 .footer-right h5{
   font-size: 21px;
-  font-weight: 700;
+  font-weight: 600;
   margin: 0;                 /* 🔥 hilangkan margin */
   padding: 0;
   line-height: 1.2;          /* 🔥 rapatkan */
@@ -617,7 +617,7 @@ html{
 
 /* tidak ada jarak antar h5 */
 .footer-right h5 + h5{
-  margin: 0;
+  margin: 4;
 }
 
 /* tidak ada jarak antara h5 dan alamat */
@@ -813,7 +813,7 @@ html{
   background:#164a5a;
   color:#fff;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 600;
   cursor:pointer;
   transition:.2s;
 }
@@ -828,7 +828,7 @@ html{
   margin-top: 18px;
   text-align:center;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   color:#164a5a;
 }
 .fg-back:hover{ text-decoration: underline; }

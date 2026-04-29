@@ -265,7 +265,7 @@
 }
 
 .dash-header p{
-  margin:0;
+  margin:10;
   font-size:15px;
   color:#184f61;
   opacity:0.85;
@@ -604,6 +604,6 @@
     });
   });
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

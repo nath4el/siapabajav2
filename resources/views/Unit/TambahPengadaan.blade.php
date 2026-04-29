@@ -166,7 +166,6 @@ $metodePengadaanOptions = [
                     @endforeach
                   </select>
                 @endif
-                  <i class="bi bi-chevron-down tp-icon"></i>
                 </div>
               </div>
 
@@ -1551,7 +1550,7 @@ $metodePengadaanOptions = [
 }
 
 .page-unit-tp .dash-header p{
-  margin:0;
+  margin:10;
   font-size:15px;
   color:#184f61;
   opacity:0.85;
@@ -2551,6 +2550,6 @@ $metodePengadaanOptions = [
     buildChecklist();
   });
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

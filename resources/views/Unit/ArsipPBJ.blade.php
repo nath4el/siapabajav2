@@ -564,7 +564,7 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-header { width: 100%; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .ap-header-left { display: flex; flex-direction: column; gap: 4px; }
 .ap-header h1 { margin: 0; font-size: 26px; font-weight: 600; color: var(--navy2); }
-.ap-header p  { margin: 0; font-size: 15px; color: #64748b; font-weight: 400; }
+.ap-header p  { margin: 8; font-size: 15px; color: #64748b; font-weight: 400; }
 .ap-header-right { display: flex; align-items: center; gap: 10px; }
 
 .ap-export-btn {
@@ -581,7 +581,7 @@ body.page-arsip.dash-body { font-family: 'Nunito', sans-serif; font-size: 15px; 
 .ap-filter-bar {
     display: flex; align-items: center; gap: 8px;
     background: #fff; border: 1px solid var(--border);
-    border-radius: var(--radius-card); padding: 12px 14px;
+    border-radius: var(--radius-card); padding: 20px 14px;
     flex-wrap: nowrap; overflow: hidden;
 }
 .ap-search-wrap { position: relative; flex: 1 1 120px; min-width: 100px; display: flex; align-items: center; }
@@ -1181,6 +1181,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

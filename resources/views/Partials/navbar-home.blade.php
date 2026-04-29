@@ -8,31 +8,43 @@
 
     <nav class="nav-links">
       <a href="{{ route('home.dashboard') }}"
-         class=class="nav-link {{ request()->routeIs(['ppk.dashboard','unit.dashboard']) ? 'active' : '' }}">
+         class="nav-link {{ request()->routeIs(['home.dashboard','ppk.dashboard','unit.dashboard']) ? 'active' : '' }}">
         Dasbor
       </a>
 
-      <a href="{{ route('home') }}#regulasi" class="nav-link">Regulasi</a>
+      <a href="{{ route('home') }}#regulasi" class="nav-link">
+        Regulasi
+      </a>
 
       <a href="{{ route('home.pbj') }}"
-         class="nav-link {{ request()->routeIs('home.pbj') ? 'active' : '' }}">Arsip PBJ</a>
+         class="nav-link {{ request()->routeIs('home.pbj') ? 'active' : '' }}">
+        Arsip PBJ
+      </a>
 
-      <a href="{{ route('home') }}#kontak" class="nav-link">Kontak</a>
+      <a href="{{ route('home') }}#kontak" class="nav-link">
+        Kontak
+      </a>
 
-      <div class="nav-user" id="homeUserMenu">
-        <button type="button" class="nav-user-btn" id="homeUserBtn" aria-label="User menu">
-          <i class="bi bi-person-circle"></i>
-        </button>
+      @if (!Auth::check())
+        <a href="{{ route('login') }}" class="nav-link">
+          Masuk
+        </a>
+      @else
+        <div class="nav-user" id="homeUserMenu">
+          <button type="button" class="nav-user-btn" id="homeUserBtn" aria-label="User menu">
+            <i class="bi bi-person-circle"></i>
+          </button>
 
-        <div class="nav-user-menu" id="homeUserDropdown">
-          <form action="{{ url('/logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="nav-logout">
-              <i class="bi bi-box-arrow-right"></i> Keluar
-            </button>
-          </form>
+          <div class="nav-user-menu" id="homeUserDropdown">
+            <form action="{{ url('/logout') }}" method="POST">
+              @csrf
+              <button type="submit" class="nav-logout">
+                <i class="bi bi-box-arrow-right"></i> Keluar
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
+      @endif
     </nav>
 
   </div>

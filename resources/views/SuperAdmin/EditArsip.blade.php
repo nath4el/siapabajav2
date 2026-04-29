@@ -1,3 +1,4 @@
+{{-- resources/views/superadmin/edit_arsip.blade.php --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,11 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Edit Arsip - SIAPABAJA</title>
 
+  {{-- Font Nunito (HANYA 400 & 600 biar tidak ada bold) --}}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
 
+  {{-- Bootstrap Icons --}}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+  {{-- Pakai base dashboard yang sama --}}
   <link rel="stylesheet" href="{{ asset('css/Unit.css') }}">
 </head>
 
@@ -19,35 +24,42 @@
   $pengadaan = $pengadaan ?? $arsip;
   $arsip = $pengadaan;
 
+  // Nama di sidebar (Super Admin)
   $superAdminName = $superAdminName ?? (auth()->user()->name ?? "Super Admin");
 
+  // =========================================================
+  // OPTIONS dari controller (fallback aman)
+  // =========================================================
   $tahunOptions = $tahunOptions ?? [date('Y'), date('Y')-1, date('Y')-2, date('Y')-3, date('Y')-4];
-  $unitOptions = $unitOptions ?? [];
+  $unitOptions  = $unitOptions ?? [];
 
   $jenisPengadaanOptions = $jenisPengadaanOptions ?? [
-  "Pengadaan Barang",
-  "Pengadaan Pekerjaan Konstruksi",
-  "Pengadaan Jasa Konsultasi",
-  "Pengadaan Jasa Lainnya",
-];
+    "Pengadaan Barang",
+    "Pengadaan Pekerjaan Konstruksi",
+    "Pengadaan Jasa Konsultasi",
+    "Pengadaan Jasa Lainnya",
+  ];
 
-$metodePengadaanOptions = $metodePengadaanOptions ?? [
+  $metodePengadaanOptions = $metodePengadaanOptions ?? [
     'Pengadaan Langsung',
     'Penunjukan Langsung',
     'E-Purchasing / E-Catalogue',
     'Tender Terbatas',
     'Tender Terbuka',
     'Swakelola',
-];
+  ];
+
   $statusPekerjaanOptions = $statusPekerjaanOptions ?? ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
 
+  // getter aman
   $get = function($source, string $key){
     if(!$source) return null;
     if(is_object($source)) return $source->$key ?? null;
-    if(is_array($source)) return $source[$key] ?? null;
+    if(is_array($source))  return $source[$key] ?? null;
     return null;
   };
 
+  // old() prioritas → lalu data $arsip
   $val = function(string $oldKey, array $attrs = []) use ($arsip, $get){
     $old = old($oldKey);
     if($old !== null) return $old;
@@ -59,9 +71,13 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
     return null;
   };
 
+  // id arsip
   $arsipId = $arsip ? (int)$get($arsip,'id') : 0;
+
+  // status arsip sesuai DB
   $statusArsipVal = $val('status_arsip', ['status_arsip']) ?? 'Publik';
 
+  // PRESELECT UNIT (nama unit yg upload)
   $selectedUnitName = old('unit_kerja');
   if($selectedUnitName === null || $selectedUnitName === ''){
     $selectedUnitName =
@@ -75,6 +91,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
     return basename($path);
   };
 
+  // helper parse file existing (support: string, json array, array)
   $parseFiles = function($raw){
     if(!$raw) return [];
     if(is_array($raw)) return array_values(array_filter($raw));
@@ -94,6 +111,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
     return [];
   };
 
+  // helper parse list (Kolom E)
   $parseList = function($raw){
     if(!$raw) return [];
     if(is_array($raw)) return array_values(array_filter($raw));
@@ -117,6 +135,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
     return [];
   };
 
+  // nilai awal Kolom E
   $eSelectedRaw = old('dokumen_tidak_dipersyaratkan');
   if($eSelectedRaw === null){
     $eSelectedRaw = $val('dokumen_tidak_dipersyaratkan', ['dokumen_tidak_dipersyaratkan']) ?? ($arsip ? $get($arsip,'dokumen_tidak_dipersyaratkan') : null);
@@ -166,7 +185,8 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
 @endphp
 
 <div class="dash-wrap">
- <aside class="dash-sidebar">
+  {{-- SIDEBAR --}}
+  <aside class="dash-sidebar">
     <div class="dash-brand">
       <div class="dash-logo">
         <img src="{{ asset('image/Logo_Unsoed.png') }}" alt="Logo Unsoed">
@@ -222,6 +242,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
     </div>
   </aside>
 
+  {{-- MAIN --}}
   <main class="dash-main">
     <header class="dash-header">
       <div class="tp-header-actions">
@@ -241,6 +262,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
       @csrf
       @if($arsip) @method('PUT') @endif
 
+      {{-- A. Informasi Umum --}}
       <section class="dash-table tp-cardbox" style="border-radius:14px; overflow:visible; margin-bottom:14px;">
         <div style="padding:18px 18px 16px;">
           <div class="tp-section">
@@ -304,19 +326,18 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
                 </div>
               </div>
 
-             <div class="tp-field">
-  <label class="tp-label">Metode Pengadaan</label>
-  <div class="tp-control">
-    <select name="metode_pengadaan" class="tp-select" required>
-      <option value="" {{ $val('metode_pengadaan',['metode_pengadaan']) ? '' : 'selected' }} disabled hidden>Pilih Metode Pengadaan</option>
-      @foreach($metodePengadaanOptions as $mp)
-        <option value="{{ $mp }}" @selected((string)$val('metode_pengadaan',['metode_pengadaan']) === (string)$mp)>{{ $mp }}</option>
-      @endforeach
-    </select>
-    <i class="bi bi-chevron-down tp-icon"></i>
-  </div>
-</div>
-
+              <div class="tp-field">
+                <label class="tp-label">Metode Pengadaan</label>
+                <div class="tp-control">
+                  <select name="metode_pengadaan" class="tp-select" required>
+                    <option value="" {{ $val('metode_pengadaan',['metode_pengadaan']) ? '' : 'selected' }} disabled hidden>Pilih Metode Pengadaan</option>
+                    @foreach($metodePengadaanOptions as $mp)
+                      <option value="{{ $mp }}" @selected((string)$val('metode_pengadaan',['metode_pengadaan']) === (string)$mp)>{{ $mp }}</option>
+                    @endforeach
+                  </select>
+                  <i class="bi bi-chevron-down tp-icon"></i>
+                </div>
+              </div>
 
               <div class="tp-field">
                 <label class="tp-label">Status Pekerjaan</label>
@@ -335,6 +356,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
         </div>
       </section>
 
+      {{-- B. Status Akses Arsip --}}
       <section class="dash-table tp-cardbox" style="border-radius:14px; overflow:visible; margin-bottom:14px;">
         <div style="padding:18px 18px 16px;">
           <div class="tp-section">
@@ -366,6 +388,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
         </div>
       </section>
 
+      {{-- C. Informasi Anggaran --}}
       <section class="dash-table tp-cardbox" style="border-radius:14px; overflow:visible; margin-bottom:14px;">
         <div style="padding:18px 18px 16px;">
           <div class="tp-section">
@@ -407,6 +430,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
         </div>
       </section>
 
+      {{-- D. Dokumen Pengadaan --}}
       <section class="dash-table tp-cardbox" style="border-radius:14px; overflow:visible; margin-bottom:14px;">
         <div style="padding:18px 18px 16px;">
           <div class="tp-section">
@@ -498,6 +522,7 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
         </div>
       </section>
 
+      {{-- E. Dokumen Tidak Dipersyaratkan --}}
       <section class="dash-table tp-cardbox" style="border-radius:14px; overflow:visible; margin-bottom:14px;">
         <div style="padding:18px 18px 16px;">
           <div class="tp-section">
@@ -555,67 +580,36 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
 </div>
 
 <style>
-  .dash-body{ font-size: 18px; line-height: 1.6; font-weight: 700; }
-  .dash-app{ font-weight: 700 !important; }
+  /* ===== SAMA PERSIS DENGAN PPK ===== */
+  .dash-body{ font-size: 18px; line-height: 1.6; font-weight: 400; }
+  .dash-app{ font-weight: 600 !important; }
 
- .dash-header{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:6px;
-}
+  .dash-header{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+  }
 
-.dash-header h1{
-  margin:0;
-  font-weight:700;
-  color:#184f61;
-}
+  .dash-header h1{
+    margin:0;
+    font-weight:700;
+    color:#184f61;
+  }
 
-.dash-header p{
-  margin:0;
-  color:#64748b;
-}
+  .dash-header p{
+    margin:0;
+    color:#64748b;
+  }
 
-
+  .dash-role,.dash-unit-label,.dash-unit-name,.dash-link,.dash-side-btn,.dash-header p,
   .tp-section-title,.tp-badge,.tp-label,.tp-input,.tp-select,.tp-actions .tp-btn,.tp-help,
   .tp-radio-card,.tp-radio-text,.tp-acc-head,.tp-upload-label,.tp-drop-title,.tp-drop-sub,
   .tp-drop-meta,.tp-drop-btn,.tp-preview-title,.tp-acc-count{
-    font-weight: 700 !important;
+    font-weight: 400 !important;
   }
 
-.dash-side-actions{
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,.12);
-  display: grid;
-  gap: 10px;
-}
-
-.dash-sidebar{
-  position: fixed;
-  left: 0; top: 0;
-  height: 100vh;
-  width: 220px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-}
-
-.dash-main {
-  padding: 28px 28px 40px;
-  display: flex;
-  flex-direction: column;
-}
-
-.dash-header {
-  width: 100%;
-}
-
-.tp-form {
-  width: 100%;
-}
+  .dash-sidebar{ display:flex; flex-direction:column; }
   .dash-side-actions{
     margin-top:auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.12);
     display:grid; gap: 10px;
@@ -745,195 +739,527 @@ $metodePengadaanOptions = $metodePengadaanOptions ?? [
     transform: translateY(-1px);
   }
   .tp-file-hidden{ display:none; }
-
   .tp-drop-ic{
-    width: 48px; height: 48px; border-radius: 16px;
-    display:grid; place-items:center; background:#f8fbfd; border:1px solid #eef3f6;
+    width: 48px; height: 48px; border-radius: 999px; border: 1px solid #e2e8f0;
+    display:grid; place-items:center; color: var(--navy2); font-size: 24px; background:#fff;
   }
-  .tp-drop-ic i{ font-size: 20px; }
-  .tp-drop-title{ font-size:16px; color:#0f172a; }
-  .tp-drop-sub{ font-size:14px; color:#475569; }
-  .tp-drop-meta{ font-size:12px; color:#94a3b8; }
+  .tp-drop-title{ color: var(--navy2); font-size: 16px; }
+  .tp-drop-sub{ color: var(--muted); font-size: 14px; }
+  .tp-drop-meta{ color:#94a3b8; font-size: 13px; }
   .tp-drop-btn{
-    margin-top: 4px;
-    height: 40px; padding: 0 14px; border-radius: 12px;
-    border: 1px solid #e2e8f0; background:#fff; display:inline-flex; align-items:center; justify-content:center;
+    margin-top: 8px; background: var(--navy2); color:#fff;
+    font-size: 16px; padding: 10px 18px; border-radius: 10px;
   }
 
-  .tp-preview-wrap{ width:100%; margin-top: 14px; text-align:left; }
-  .tp-preview-title{ font-size:14px; color:#0f172a; margin-bottom:10px; }
-  .tp-preview-list{ display:grid; gap:10px; }
+  .tp-preview-wrap{
+    width: 100%; margin-top: 12px; border-top: 1px solid rgba(2,8,23,.06);
+    padding-top: 12px; text-align: left;
+  }
+  .tp-preview-title{ color: var(--navy2); font-size: 14px; margin-bottom: 10px; }
+  .tp-preview-list{ display:grid; gap: 10px; }
   .tp-preview-item{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    border:1px solid #e8eef3; background:#fff; border-radius:14px; padding:10px 12px;
+    display:flex; align-items:center; justify-content: space-between; gap: 10px;
+    padding: 10px 10px; border: 1px solid rgba(2,8,23,.08); border-radius: 12px; background: #fff;
   }
-  .tp-preview-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .tp-preview-left{ display:flex; align-items:center; gap: 10px; min-width: 0; flex: 1 1 auto; }
   .tp-preview-thumb{
-    width:38px; height:38px; border-radius:12px; display:grid; place-items:center;
-    background:#f8fbfd; border:1px solid #eef3f6; flex:0 0 auto;
+    width: 42px; height: 42px; border-radius: 10px; border: 1px solid rgba(2,8,23,.08);
+    background: #f8fafc; display:grid; place-items:center; overflow:hidden; flex: 0 0 auto;
   }
+  .tp-preview-thumb img{ width:100%; height:100%; object-fit: cover; display:block; }
   .tp-preview-info{ min-width:0; }
-  .tp-preview-name{ font-size:14px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .tp-preview-meta{ font-size:12px; color:#64748b; }
+  .tp-preview-name{ font-size: 14px; color: #0f172a; word-break: break-word; line-height: 1.35; }
+  .tp-preview-meta{ font-size: 12px; color: #64748b; margin-top: 2px; }
   .tp-preview-remove{
-    width:34px; height:34px; border-radius:12px; border:1px solid #e8eef3;
-    background:#fff; display:grid; place-items:center; cursor:pointer;
+    width: 34px; height: 34px; border-radius: 10px;
+    border: 1px solid rgba(2,8,23,.10); background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor:pointer; flex: 0 0 auto; padding: 0; line-height: 1; color: #0f172a;
+  }
+  .tp-preview-remove i{ font-size: 18px; line-height: 1; display:block; transform: translateY(0.5px); }
+
+  @media(max-width:1100px){
+    .tp-actions-split{ flex-direction: column; align-items: stretch; justify-content: flex-start; }
+    .tp-btn-same{ width: 100%; min-width: 0; }
   }
 
-  .tp-nondoc-wrap{
-    border: 1px solid #e6eef2;
-    border-radius: 14px;
-    background:#fff;
-    overflow:hidden;
+  .tp-cardbox{
+    background:#fff !important; border-radius:14px !important;
+    box-shadow: 0 10px 20px rgba(2, 8, 23, .06) !important;
+    border: 1px solid #eef3f6 !important; margin-bottom: 14px !important;
+    overflow: hidden !important;
   }
+  .tp-cardbox > div{ padding: 18px 18px 18px !important; }
+  .tp-grid{ padding: 0 !important; gap: 14px 18px !important; }
+  .tp-divider{ margin-left:0 !important; margin-right:0 !important; }
+  .tp-acc{ padding: 0 !important; display: grid !important; gap: 14px !important; }
+  .tp-help{ margin: 0 0 12px !important; font-size: 15px; color: #64748b; }
+
+  /* KOLOM E */
+  .tp-nondoc-wrap{ border: 1px solid #eef3f6; border-radius: 14px; background: #fff; box-shadow: 0 10px 18px rgba(2,8,23,.05); overflow: hidden; }
   .tp-nondoc-head{
-    display:flex; justify-content:space-between; align-items:center; gap:12px;
-    padding:12px 14px; background:#f8fbfd; border-bottom:1px solid #eef3f6;
+    display:flex; align-items:center; justify-content: space-between; gap: 12px;
+    padding: 12px 14px; background: #dff1ff; color: var(--navy2);
+    border-bottom: 1px solid #eef3f6;
   }
-  .tp-nondoc-title{ display:flex; align-items:center; gap:8px; font-size:15px; color:#0f172a; }
+  .tp-nondoc-title{ display:flex; align-items:center; gap: 10px; font-size: 16px; color: var(--navy2); }
+  .tp-nondoc-title i{ font-size: 18px; }
+  .tp-nondoc-actions{ display:flex; align-items:center; gap: 10px; }
   .tp-nondoc-btn{
-    height:36px; padding:0 12px; border-radius:10px; border:1px solid #e2e8f0; background:#fff; cursor:pointer;
-    display:inline-flex; align-items:center; gap:8px;
+    display:inline-flex; align-items:center; gap: 8px;
+    border: 1px solid rgba(2,8,23,.10); background:#fff; color: var(--navy2);
+    padding: 10px 12px; border-radius: 12px; cursor:pointer;
+    font-family: inherit; font-size: 14px;
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
   }
-  .tp-nondoc-box{ padding:14px; display:grid; gap:10px; }
+  .tp-nondoc-btn:hover{ transform: translateY(-1px); box-shadow: 0 12px 18px rgba(2,8,23,.08); border-color: rgba(24,79,97,.35); }
+
+  .tp-nondoc-box{
+    padding: 14px; display:grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; max-height: 380px; overflow:auto;
+  }
+  @media(max-width:900px){ .tp-nondoc-box{ grid-template-columns: 1fr; } }
+
   .tp-nondoc-item{
-    display:flex; align-items:center; gap:10px; border:1px solid #e8eef3; border-radius:12px; padding:10px 12px;
+    display:flex; align-items:flex-start; gap: 10px;
+    border: 1px solid rgba(2,8,23,.08); border-radius: 14px;
+    padding: 12px 12px; background:#fff; cursor:pointer; user-select:none;
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
   }
-  .tp-nondoc-selected{ padding:0 14px 14px; }
-  .tp-nondoc-selected-title{ font-size:14px; color:#0f172a; margin-bottom:10px; }
-  .tp-nondoc-chips{ display:flex; gap:8px; flex-wrap:wrap; }
-  .tp-chip{
-    display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px;
-    border:1px solid #d7e9ee; background:#e9f3f6; font-size:13px; color:#184f61;
+  .tp-nondoc-item:hover{ transform: translateY(-1px); box-shadow: 0 12px 18px rgba(2,8,23,.08); border-color: rgba(24,79,97,.35); }
+  .tp-nondoc-item input{ display:none; }
+  .tp-nondoc-check{
+    width: 18px; height: 18px; border-radius: 6px;
+    border: 2px solid var(--navy2); flex: 0 0 auto;
+    margin-top: 1px; position: relative;
+  }
+  .tp-nondoc-text{ font-size: 15px; color: #0f172a; line-height: 1.35; }
+  .tp-nondoc-item.is-checked{ background: rgba(24,79,97,.08); border-color: rgba(24,79,97,.35); }
+  .tp-nondoc-item.is-checked .tp-nondoc-check::after{
+    content:""; position:absolute; left:50%; top:50%;
+    width: 9px; height: 9px; transform: translate(-50%, -50%);
+    border-radius: 3px; background: var(--navy2);
+  }
+
+  .tp-nondoc-selected{ border-top: 1px solid rgba(2,8,23,.06); padding: 12px 14px 14px; background:#fff; }
+  .tp-nondoc-selected-title{ color: var(--navy2); font-size: 14px; margin-bottom: 10px; }
+  .tp-nondoc-chips{ display:flex; flex-wrap:wrap; gap: 8px; }
+  .tp-nondoc-chip{
+    display:inline-flex; align-items:center; gap: 8px;
+    padding: 8px 10px; border-radius: 999px;
+    border: 1px solid rgba(24,79,97,.22); background:#fff;
+    color: var(--navy2); font-size: 13px;
   }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('.tp-radio-card').forEach(card => {
+  // toggle active state untuk radio cards
+  document.addEventListener('click', function(e){
+    const card = e.target.closest('.tp-radio-card');
+    if(!card) return;
+
+    const wrap = card.closest('.tp-radio-wrap');
+    if(!wrap) return;
+
+    wrap.querySelectorAll('.tp-radio-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+
     const input = card.querySelector('input[type="radio"]');
-    if (!input) return;
-    input.addEventListener('change', function () {
-      document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => {
-        r.closest('.tp-radio-card')?.classList.remove('active');
-      });
-      card.classList.add('active');
-    });
+    if(input) input.checked = true;
   });
 
-  document.querySelectorAll('.tp-acc-item').forEach(item => {
-    const head = item.querySelector('.tp-acc-head');
-    const body = item.querySelector('.tp-acc-body');
-    const icon = item.querySelector('.tp-acc-ic');
-    if (!head || !body || !icon) return;
+  document.addEventListener('DOMContentLoaded', function(){
+    const formEl = document.getElementById('editForm');
 
-    head.addEventListener('click', function () {
-      const isHidden = body.style.display === 'none';
-      body.style.display = isHidden ? '' : 'none';
-      icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-180deg)';
+    // ✅ Hapus Perubahan: reload
+    const resetBtn = document.getElementById('btnResetChanges');
+    if(resetBtn) resetBtn.addEventListener('click', () => window.location.reload());
+
+    // set active sesuai checked
+    document.querySelectorAll('.tp-radio-wrap').forEach(wrap => {
+      wrap.querySelectorAll('.tp-radio-card').forEach(c => c.classList.remove('active'));
+      const checked = wrap.querySelector('input[type="radio"]:checked');
+      if(checked) checked.closest('.tp-radio-card').classList.add('active');
     });
-  });
 
-  document.querySelectorAll('.tp-file-hidden').forEach(input => {
-    input.addEventListener('change', function () {
-      const item = input.closest('.tp-acc-item');
-      const wrap = input.closest('.tp-dropzone')?.querySelector('.tp-preview-wrap');
-      const list = input.closest('.tp-dropzone')?.querySelector('.tp-preview-list');
-      if (!wrap || !list) return;
+    // Inject count
+    document.querySelectorAll('.tp-acc-item').forEach(item => {
+      const right = item.querySelector('.tp-acc-right');
+      const chev  = item.querySelector('.tp-acc-ic');
+      if(!right || !chev) return;
 
-      const existingCount = list.querySelectorAll('.tp-existing').length;
-      const files = Array.from(input.files || []);
-
-      list.querySelectorAll('.tp-new').forEach(el => el.remove());
-
-      files.forEach(file => {
-        const row = document.createElement('div');
-        row.className = 'tp-preview-item tp-new';
-        row.innerHTML = `
-          <div class="tp-preview-left">
-            <div class="tp-preview-thumb"><i class="bi bi-file-earmark"></i></div>
-            <div class="tp-preview-info">
-              <div class="tp-preview-name">${file.name}</div>
-              <div class="tp-preview-meta">File baru dipilih</div>
-            </div>
-          </div>
-          <button type="button" class="tp-preview-remove"><i class="bi bi-x-lg"></i></button>
-        `;
-        row.querySelector('.tp-preview-remove').addEventListener('click', function () {
-          row.remove();
-          if (list.children.length === 0) wrap.hidden = true;
-          if ((existingCount + list.querySelectorAll('.tp-new').length) === 0) {
-            item?.classList.remove('has-file');
-          }
-        });
-        list.appendChild(row);
-      });
-
-      wrap.hidden = (existingCount + files.length) === 0;
-      if ((existingCount + files.length) > 0) {
-        item?.classList.add('has-file');
+      if(!right.querySelector('.tp-acc-count')){
+        const count = document.createElement('span');
+        count.className = 'tp-acc-count';
+        count.hidden = true;
+        count.textContent = '';
+        right.insertBefore(count, chev);
       }
     });
-  });
 
-  const preselect = (() => {
-    try { return JSON.parse(document.getElementById('tp-nondoc-preselect')?.value || '[]'); }
-    catch(e){ return []; }
-  })();
+    // accordion: default CLOSED
+    document.querySelectorAll('.tp-acc-item').forEach(item => {
+      const head = item.querySelector('.tp-acc-head');
+      const body = item.querySelector('.tp-acc-body');
+      const ic   = item.querySelector('.tp-acc-ic');
+      if(!head || !body) return;
 
-  const docNames = Array.from(document.querySelectorAll('.tp-acc-head .tp-acc-left')).map(el => {
-    return el.textContent.trim();
-  });
+      body.style.display = 'none';
+      if(ic) ic.style.transform = 'rotate(-90deg)';
+      head.setAttribute('aria-expanded', 'false');
 
-  const listBox = document.getElementById('tp-nondoc-list');
-  const chipsWrap = document.getElementById('tp-nondoc-chips');
-  const selectedWrap = document.getElementById('tp-nondoc-selected');
-  const jsonInput = document.getElementById('tp-nondoc-json');
-  const clearBtn = document.getElementById('tp-nondoc-clear');
-
-  const selected = new Set(preselect);
-
-  function renderNonDoc(){
-    if (!listBox || !chipsWrap || !jsonInput || !selectedWrap) return;
-
-    listBox.innerHTML = '';
-    chipsWrap.innerHTML = '';
-
-    docNames.forEach(name => {
-      const row = document.createElement('label');
-      row.className = 'tp-nondoc-item';
-      row.innerHTML = `
-        <input type="checkbox" value="${name}" ${selected.has(name) ? 'checked' : ''}>
-        <span>${name}</span>
-      `;
-      const cb = row.querySelector('input');
-      cb.addEventListener('change', function () {
-        if (cb.checked) selected.add(name);
-        else selected.delete(name);
-        renderNonDoc();
+      head.addEventListener('click', () => {
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'block';
+        if(ic) ic.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+        head.setAttribute('aria-expanded', String(!isOpen));
       });
-      listBox.appendChild(row);
     });
 
-    const arr = Array.from(selected);
-    jsonInput.value = JSON.stringify(arr);
-    selectedWrap.hidden = arr.length === 0;
+    // "Pilih File" trigger input
+    document.querySelectorAll('.tp-dropzone').forEach(zone => {
+      const input = zone.querySelector('input[type="file"]');
+      const btn   = zone.querySelector('.tp-drop-btn');
+      const title = zone.querySelector('.tp-drop-title');
+      const sub   = zone.querySelector('.tp-drop-sub');
 
-    arr.forEach(name => {
-      const chip = document.createElement('div');
-      chip.className = 'tp-chip';
-      chip.textContent = name;
-      chipsWrap.appendChild(chip);
+      if(title && !title.dataset.defaultText) title.dataset.defaultText = title.textContent.trim();
+      if(sub   && !sub.dataset.defaultText)   sub.dataset.defaultText   = sub.textContent.trim();
+      if(btn   && !btn.dataset.defaultText)   btn.dataset.defaultText   = btn.textContent.trim();
+
+      if(input && btn){
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          input.click();
+        });
+      }
     });
-  }
 
-  clearBtn?.addEventListener('click', function(){
-    selected.clear();
-    renderNonDoc();
+    const getIconHtml = (file) => {
+      const name = (file.name || '').toLowerCase();
+      const type = (file.type || '').toLowerCase();
+      if(type.startsWith('image/'))                              return '<i class="bi bi-image"></i>';
+      if(name.endsWith('.pdf'))                                  return '<i class="bi bi-file-earmark-pdf"></i>';
+      if(name.endsWith('.doc') || name.endsWith('.docx'))        return '<i class="bi bi-file-earmark-word"></i>';
+      if(name.endsWith('.xls') || name.endsWith('.xlsx') || name.endsWith('.csv')) return '<i class="bi bi-file-earmark-excel"></i>';
+      if(name.endsWith('.ppt') || name.endsWith('.pptx'))        return '<i class="bi bi-file-earmark-ppt"></i>';
+      return '<i class="bi bi-file-earmark"></i>';
+    };
+
+    const formatSize = (bytes) => {
+      if(!bytes && bytes !== 0) return '';
+      if(bytes < 1024) return bytes + ' B';
+      const kb = bytes / 1024;
+      if(kb < 1024) return kb.toFixed(1) + ' KB';
+      return (kb / 1024).toFixed(1) + ' MB';
+    };
+
+    // Edit mode: existing + new files
+    document.querySelectorAll('.tp-acc-item').forEach(item => {
+      const fileInput = item.querySelector('input[type="file"]');
+      const zone      = item.querySelector('.tp-dropzone');
+      if(!fileInput || !zone) return;
+
+      const title       = zone.querySelector('.tp-drop-title');
+      const sub         = zone.querySelector('.tp-drop-sub');
+      const btn         = zone.querySelector('.tp-drop-btn');
+      const previewWrap = zone.querySelector('.tp-preview-wrap');
+      const previewList = zone.querySelector('.tp-preview-list');
+      const headCount   = item.querySelector('.tp-acc-count');
+
+      let storedFiles = [];
+      const fileKey = (f) => `${f.name}__${f.size}__${f.lastModified}`;
+
+      const rebuildInputFiles = () => {
+        const dt = new DataTransfer();
+        storedFiles.forEach(f => dt.items.add(f));
+        fileInput.files = dt.files;
+      };
+
+      const ensureWrapVisible = () => {
+        if(previewWrap) previewWrap.hidden = false;
+      };
+
+      const clearNewPreviewOnly = () => {
+        if(!previewList) return;
+        previewList.querySelectorAll('.tp-preview-item:not(.tp-existing)').forEach(n => n.remove());
+      };
+
+      const renderNewPreview = () => {
+        clearNewPreviewOnly();
+        if(!previewList) return;
+
+        storedFiles.forEach((file) => {
+          const row = document.createElement('div');
+          row.className = 'tp-preview-item';
+
+          const left = document.createElement('div');
+          left.className = 'tp-preview-left';
+
+          const thumb = document.createElement('div');
+          thumb.className = 'tp-preview-thumb';
+
+          const type = (file.type || '').toLowerCase();
+          if(type.startsWith('image/')){
+            const img = document.createElement('img');
+            img.alt = file.name || 'preview';
+            img.src = URL.createObjectURL(file);
+            img.onload = () => { try{ URL.revokeObjectURL(img.src); }catch(e){} };
+            thumb.appendChild(img);
+          } else {
+            thumb.innerHTML = getIconHtml(file);
+          }
+
+          const info = document.createElement('div');
+          info.className = 'tp-preview-info';
+
+          const name = document.createElement('div');
+          name.className = 'tp-preview-name';
+          name.textContent = file.name || 'Dokumen';
+
+          const meta = document.createElement('div');
+          meta.className = 'tp-preview-meta';
+          meta.textContent = formatSize(file.size);
+
+          info.appendChild(name);
+          info.appendChild(meta);
+          left.appendChild(thumb);
+          left.appendChild(info);
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'tp-preview-remove';
+          removeBtn.setAttribute('aria-label', 'Hapus file');
+          removeBtn.dataset.key = fileKey(file);
+          removeBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+
+          removeBtn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            const k = removeBtn.dataset.key;
+            storedFiles = storedFiles.filter(f => fileKey(f) !== k);
+            rebuildInputFiles();
+            syncUI();
+          });
+
+          row.appendChild(left);
+          row.appendChild(removeBtn);
+          previewList.appendChild(row);
+        });
+
+        if(previewWrap){
+          const existingAlive = item.querySelectorAll('.tp-preview-item.tp-existing[data-existing="1"]').length;
+          previewWrap.hidden = (existingAlive + storedFiles.length === 0);
+        }
+      };
+
+      const syncUI = () => {
+        const existingAlive = item.querySelectorAll('.tp-preview-item.tp-existing[data-existing="1"]').length;
+        const total   = existingAlive + storedFiles.length;
+        const hasFile = total > 0;
+
+        item.classList.toggle('has-file', hasFile);
+
+        if(headCount){
+          if(hasFile){
+            headCount.textContent = (total === 1) ? '1 file sudah terupload' : (total + ' file sudah terupload');
+            headCount.hidden = false;
+          } else {
+            headCount.textContent = '';
+            headCount.hidden = true;
+          }
+        }
+
+        if(hasFile){
+          ensureWrapVisible();
+          if(title) title.textContent = (total === 1 && storedFiles.length === 1) ? storedFiles[0].name : (total + ' file dipilih');
+          if(sub)   sub.textContent   = 'File dipilih';
+          if(btn)   btn.textContent   = 'Tambah File';
+          renderNewPreview();
+        } else {
+          if(title && title.dataset.defaultText) title.textContent = title.dataset.defaultText;
+          if(sub   && sub.dataset.defaultText)   sub.textContent   = sub.dataset.defaultText;
+          if(btn   && btn.dataset.defaultText)   btn.textContent   = btn.dataset.defaultText;
+          if(previewList) previewList.innerHTML = '';
+          if(previewWrap) previewWrap.hidden = true;
+        }
+      };
+
+      // ✅ remove existing → inject hidden input {field}_remove[] supaya tersimpan di DB saat submit
+      item.querySelectorAll('.js-remove-existing').forEach(btnX => {
+        btnX.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+
+          const row   = btnX.closest('.tp-preview-item.tp-existing');
+          if(!row) return;
+
+          const field = row.getAttribute('data-field') || '';
+          const path  = row.getAttribute('data-path')  || '';
+
+          if(formEl && field && path){
+            const hid   = document.createElement('input');
+            hid.type    = 'hidden';
+            hid.name    = `${field}_remove[]`;
+            hid.value   = path;
+            formEl.appendChild(hid);
+          }
+
+          row.remove();
+          syncUI();
+        });
+      });
+
+      fileInput.addEventListener('change', () => {
+        const picked = (fileInput.files && fileInput.files.length) ? Array.from(fileInput.files) : [];
+        if(picked.length){
+          const existing = new Set(storedFiles.map(fileKey));
+          picked.forEach(f => {
+            const k = fileKey(f);
+            if(!existing.has(k)){
+              storedFiles.push(f);
+              existing.add(k);
+            }
+          });
+          rebuildInputFiles();
+        }
+        syncUI();
+      });
+
+      storedFiles = [];
+      rebuildInputFiles();
+      syncUI();
+    });
+
+    /* =========================================================
+       E. Dokumen Tidak Dipersyaratkan (EDIT MODE: preselect)
+       ========================================================= */
+    const listWrap   = document.getElementById('tp-nondoc-list');
+    const jsonInput  = document.getElementById('tp-nondoc-json');
+    const chipsWrap  = document.getElementById('tp-nondoc-chips');
+    const selectedBox= document.getElementById('tp-nondoc-selected');
+    const btnClear   = document.getElementById('tp-nondoc-clear');
+
+    const preselectEl = document.getElementById('tp-nondoc-preselect');
+    let preselect = [];
+    try{
+      preselect = preselectEl ? JSON.parse(preselectEl.value || '[]') : [];
+      if(!Array.isArray(preselect)) preselect = [];
+    }catch(e){ preselect = []; }
+
+    const cleanText = (s) => (s || '').replace(/\s+/g,' ').trim();
+
+    const getDocTitlesFromD = () => {
+      const titles = [];
+      document.querySelectorAll('.tp-acc-item .tp-acc-left').forEach(el => {
+        const text = cleanText(el.textContent);
+        if(text) titles.push(text);
+      });
+      return titles.filter((t, i) => titles.indexOf(t) === i);
+    };
+
+    const state = { selected: new Set() };
+
+    const syncHiddenJson = () => {
+      const arr = Array.from(state.selected);
+      if(jsonInput) jsonInput.value = JSON.stringify(arr);
+    };
+
+    const renderChips = () => {
+      const arr = Array.from(state.selected);
+      if(!chipsWrap || !selectedBox) return;
+
+      chipsWrap.innerHTML = '';
+      if(arr.length === 0){
+        selectedBox.hidden = true;
+        return;
+      }
+      selectedBox.hidden = false;
+
+      arr.forEach(t => {
+        const chip = document.createElement('div');
+        chip.className = 'tp-nondoc-chip';
+        chip.textContent = t;
+        chipsWrap.appendChild(chip);
+      });
+    };
+
+    const toggleItem = (title, checked, itemEl, inputEl) => {
+      if(checked) state.selected.add(title);
+      else        state.selected.delete(title);
+
+      if(itemEl)  itemEl.classList.toggle('is-checked', checked);
+      if(inputEl) inputEl.checked = checked;
+
+      syncHiddenJson();
+      renderChips();
+    };
+
+    const buildChecklist = () => {
+      if(!listWrap) return;
+
+      const titles = getDocTitlesFromD();
+      listWrap.innerHTML = '';
+
+      titles.forEach((title) => {
+        const label = document.createElement('label');
+        label.className = 'tp-nondoc-item';
+
+        const input = document.createElement('input');
+        input.type  = 'checkbox';
+        input.name  = 'dokumen_tidak_dipersyaratkan[]';
+        input.value = title;
+
+        const box = document.createElement('span');
+        box.className = 'tp-nondoc-check';
+
+        const txt = document.createElement('span');
+        txt.className = 'tp-nondoc-text';
+        txt.textContent = title;
+
+        label.appendChild(input);
+        label.appendChild(box);
+        label.appendChild(txt);
+
+        if(preselect.includes(title)){
+          state.selected.add(title);
+          label.classList.add('is-checked');
+          input.checked = true;
+        }
+
+        label.addEventListener('click', (ev) => {
+          if(ev.target && ev.target.tagName === 'A') return;
+          ev.preventDefault();
+
+          const next = !input.checked;
+          toggleItem(title, next, label, input);
+        });
+
+        listWrap.appendChild(label);
+      });
+
+      syncHiddenJson();
+      renderChips();
+    };
+
+    if(btnClear){
+      btnClear.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        state.selected.clear();
+
+        document.querySelectorAll('#tp-nondoc-list .tp-nondoc-item').forEach(item => {
+          item.classList.remove('is-checked');
+          const inp = item.querySelector('input[type="checkbox"]');
+          if(inp) inp.checked = false;
+        });
+
+        syncHiddenJson();
+        renderChips();
+      });
+    }
+
+    buildChecklist();
   });
-
-  renderNonDoc();
-});
 </script>
 
 </body>

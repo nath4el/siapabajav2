@@ -22,6 +22,9 @@
 
   @include('Partials.footer')
 
+  {{-- ✅ CHATBOT --}}
+  @include('Partials.chatbot')
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   {{-- ✅ SCROLLSPY (FINAL: JALAN SELAMA SECTION ADA, KONTAK SELALU WORK) --}}
@@ -34,10 +37,8 @@
     const hashLinks = allLinks.filter(a => (a.getAttribute('href') || '').includes('#'));
     if (!hashLinks.length) return;
 
-    // ✅ track section landing
     const sectionIds = ['regulasi','statistika','kontak'];
 
-    // ✅ kalau section-nya gak ada di halaman ini, stop (biar gak ganggu halaman lain)
     const elements = sectionIds
       .map(id => document.getElementById(id))
       .filter(Boolean);
@@ -47,7 +48,7 @@
     const getHashFromHref = (a) => {
       const href = a.getAttribute('href') || '';
       try {
-        return new URL(href, window.location.origin).hash; // "#regulasi"
+        return new URL(href, window.location.origin).hash;
       } catch (e) {
         const idx = href.indexOf('#');
         return idx >= 0 ? href.slice(idx) : '';
@@ -76,19 +77,16 @@
       if (sectionIds.includes(id)) setActiveById(id);
     };
 
-    // ✅ 1) ACTIVE SAAT KLIK
     hashLinks.forEach(a => {
       a.addEventListener('click', () => {
         const hash = getHashFromHref(a);
         const id = hash.replace('#','');
         if (!sectionIds.includes(id)) return;
         setActiveById(id);
-        // sync setelah browser scroll
         setTimeout(() => onScrollBottomCheck(), 80);
       });
     });
 
-    // ✅ 2) KONTAK PASTI AKTIF DI BAWAH
     const onScrollBottomCheck = () => {
       const nearBottom =
         window.innerHeight + window.scrollY >= document.body.scrollHeight - 8;
@@ -98,7 +96,6 @@
 
     window.addEventListener('scroll', onScrollBottomCheck, { passive: true });
 
-    // ✅ 3) ACTIVE SAAT MASUK SECTION (Observer)
     if (!('IntersectionObserver' in window)) {
       window.addEventListener('hashchange', () => {
         setActiveByHash();
@@ -134,7 +131,6 @@
 
     elements.forEach(el => observer.observe(el));
 
-    // init
     setActiveByHash();
     onScrollBottomCheck();
   });

@@ -1614,7 +1614,7 @@
 }
 
 :where(.page-ppk-tp) .dash-header p{
-  margin:0;
+  margin:10;
   color:#64748b;
 }
   :where(.page-ppk-tp) .dash-role,
@@ -2703,6 +2703,6 @@
     buildChecklist();
   });
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

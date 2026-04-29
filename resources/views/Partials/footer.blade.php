@@ -22,7 +22,6 @@
 
     <!-- RIGHT: Kontak -->
     <div class="footer-col footer-right">
-      <h5>Hubungi Kami</h5>
       <h5>Subbag Pengadaan Barang Jasa</h5>
       <div class="mini">
         Jalan Prof. Dr. HR. Boenjamin 708 Kotak Pos 115<br>

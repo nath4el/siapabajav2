@@ -22,6 +22,9 @@
 
   @include('Partials.footer')
 
+  {{-- ✅ CHATBOT --}}
+  @include('Partials.chatbot')
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   {{-- dropdown user --}}
@@ -51,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const links = Array.from(document.querySelectorAll('.nav-links a.nav-link'));
   if (!links.length) return;
 
-  // target section yang mau di-highlight
   const targets = Array.from(document.querySelectorAll('[id]'))
     .filter(el => ['regulasi','kontak','statistika','arsip'].includes(el.id));
 
@@ -76,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const onScroll = () => {
-    // kalau sudah dekat bawah, paksa kontak aktif
     const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 20;
     if (nearBottom) return setActiveById('kontak');
 
@@ -101,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
   onScroll();
 });
 </script>
-
 
   @stack('scripts')
 </body>

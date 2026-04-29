@@ -104,6 +104,14 @@
 
     <div class="table-card">
       <table>
+        <colgroup>
+          <col class="col-username">
+          <col class="col-unit">
+          <col class="col-email">
+          <col class="col-password">
+          <col class="col-status">
+          <col class="col-aksi">
+        </colgroup>
         <thead>
           <tr>
             <th>Username</th>
@@ -321,6 +329,7 @@
     --yellow: #f6c100;
     --main-bg: #f3f5f7;
     --text: #214f68;
+    --unsoed-blue: #184f61;
   }
 
   /* ===== SIDEBAR SCROLL ===== */
@@ -366,26 +375,67 @@
 
   /* ===== BUTTON TAMBAH ===== */
   .btn-add {
-    border: 0; background: var(--sidebar); color: #fff; border-radius: 8px;
-    padding: 12px 18px; font-family: inherit; font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; gap: 10px;
+    border: 0;
+    background: var(--sidebar);
+    color: #fff;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: max-content;
   }
 
   /* ===== TABLE ===== */
-  .table-card { background: #fff; border-radius: 10px; overflow-x: auto; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
-  table { width: 100%; min-width: 860px; border-collapse: collapse; table-layout: fixed; }
+  .table-card {
+    width: 100%;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+  }
+
+  table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  .col-username { width: 18%; }
+  .col-unit { width: 16%; }
+  .col-email { width: 22%; }
+  .col-password { width: 18%; }
+  .col-status { width: 13%; }
+  .col-aksi { width: 13%; }
+
   thead { background: var(--sidebar); color: #fff; }
-  th, td { padding: 14px 12px; text-align: left; font-size: 14px; vertical-align: middle; }
+
+  th,
+  td {
+    padding: 18px 16px;
+    text-align: left;
+    font-size: 15px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  th:nth-child(5),
+  td:nth-child(5),
+  th:nth-child(6),
+  td:nth-child(6) {
+    text-align: center;
+  }
+
   tbody tr { border-bottom: 1px solid #d1d5db; }
   tbody td { color: #24526c; }
-
-  /* Lebar kolom tetap — total = 100% */
-  table th:nth-child(1), table td:nth-child(1) { width: 13%; }
-  table th:nth-child(2), table td:nth-child(2) { width: 17%; }
-  table th:nth-child(3), table td:nth-child(3) { width: 27%; word-break: break-all; font-size: 13px; }
-  table th:nth-child(4), table td:nth-child(4) { width: 12%; }
-  table th:nth-child(5), table td:nth-child(5) { width: 13%; }
-  table th:nth-child(6), table td:nth-child(6) { width: 18%; }
 
   /* ===== STATUS ===== */
   .status { display: inline-block; min-width: 90px; text-align: center; padding: 8px 14px; border-radius: 6px; font-size: 14px; }
@@ -393,8 +443,36 @@
   .status.nonaktif { background: #f2b4b4; color: #991b1b; }
 
   /* ===== AKSI ===== */
-  .aksi { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-  .icon-btn { border: 0; background: transparent; color: #1f5872; font-size: 18px; cursor: pointer; padding: 0; }
+  .aksi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    white-space: nowrap;
+  }
+
+  .icon-btn {
+    border: 0;
+    background: transparent;
+    color: var(--unsoed-blue);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .icon-btn i,
+  .icon-btn .bi {
+    color: var(--unsoed-blue) !important;
+    -webkit-text-fill-color: var(--unsoed-blue) !important;
+    opacity: 1 !important;
+  }
+
+  .icon-btn:hover i,
+  .icon-btn:hover .bi {
+    color: #143f4d !important;
+    -webkit-text-fill-color: #143f4d !important;
+  }
+
   .form-delete { display: inline; margin: 0; padding: 0; }
   .empty-cell { text-align: center; color: #6b7280; padding: 28px 16px; }
 
@@ -490,7 +568,7 @@
   /* ===== RESPONSIVE ===== */
   @media (max-width: 900px) {
     .dash-header-row { flex-direction: column; align-items: stretch; }
-    .btn-add { justify-content: center; }
+    .btn-add { justify-content: center; width: 100%; }
     .modal-card { padding: 24px 20px; border-radius: 18px; }
     .table-card { overflow-x: auto; }
     table { table-layout: auto; min-width: 700px; }
@@ -583,5 +661,6 @@
     });
   });
 </script>
+@include('Partials.chatbot')
 </body>
 </html>

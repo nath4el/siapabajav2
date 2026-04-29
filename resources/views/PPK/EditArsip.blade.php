@@ -1280,6 +1280,6 @@
     buildChecklist();
   });
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

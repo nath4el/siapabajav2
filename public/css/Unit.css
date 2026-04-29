@@ -279,7 +279,7 @@ table, th, td{ font-size: var(--fs-sm); }
 }
 
 .dash-header p{
-  margin: 6px 0 18px;
+  margin: 6px 0 10px;
   color: var(--muted);
   font-weight: var(--fw-normal);
   font-size: 15px;
@@ -1629,4 +1629,125 @@ body.modal-open .dash-wrap{
         width: 100%;
         justify-content: flex-end;
     }
+}
+/* =========================================================
+   ✅ FIX FINAL SIDEBAR SUPER ADMIN
+   - Menu utama tidak bergerak saat Kelola Akun dibuka/tutup
+   - Mengunci ukuran, padding, gap, icon, dan scrollbar sidebar
+========================================================= */
+
+.dash-sidebar {
+  width: 260px !important;
+  flex: 0 0 260px !important;
+  padding: 18px 16px !important;
+  overflow: hidden !important;
+}
+
+.dash-brand {
+  flex-shrink: 0 !important;
+}
+
+.dash-nav {
+  flex: 1 !important;
+  padding-top: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 0 !important;
+  scrollbar-gutter: auto !important;
+}
+
+.dash-link,
+.dash-link-accordion {
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 12px 12px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+}
+
+.dash-link.active,
+.dash-link-accordion.active,
+.dash-link:hover,
+.dash-link-accordion:hover {
+  padding: 12px 12px !important;
+  border: 0 !important;
+  outline: none !important;
+  transform: none !important;
+}
+
+.dash-link .ic,
+.dash-link-accordion .ic {
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-accordion-item {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-link-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+.dash-chevron {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-sub {
+  display: none !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding-left: 14px !important;
+  margin: 8px 0 0 0 !important;
+}
+
+.dash-sub.is-open {
+  display: flex !important;
+}
+
+.dash-sub-link {
+  width: 100% !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+}
+
+.dash-side-actions {
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-nav::-webkit-scrollbar {
+  width: 0 !important;
+}
+
+.dash-nav::-webkit-scrollbar-thumb {
+  background: transparent !important;
 }

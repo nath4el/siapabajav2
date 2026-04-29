@@ -109,6 +109,14 @@
 
     <div class="table-card">
       <table>
+        <colgroup>
+          <col class="col-username">
+          <col class="col-unit">
+          <col class="col-email">
+          <col class="col-password">
+          <col class="col-status">
+          <col class="col-aksi">
+        </colgroup>
         <thead>
           <tr>
             <th>Username</th>
@@ -142,7 +150,7 @@
                   data-password="{{ $item['password'] ?? '' }}"
                   data-status="{{ $item['status'] ?? 'Aktif' }}"
                   title="Edit">
-                  <i class="bi bi-pencil"></i>
+                  <i class="bi bi-pencil-fill"></i>
                 </button>
 
                 <form
@@ -152,7 +160,7 @@
                   @csrf
                   @method('DELETE')
                   <button type="button" class="icon-btn js-open-confirm" title="Hapus">
-                    <i class="bi bi-trash"></i>
+                    <i class="bi bi-trash-fill"></i>
                   </button>
                 </form>
               </td>
@@ -321,13 +329,12 @@
 </div>
 
 <style>
-  /* ===== ROOT ===== */
   :root {
     --sidebar: #1f5872;
     --yellow: #f6c100;
+    --unsoed-blue: #184f61;
   }
 
-  /* ===== SIDEBAR ACCORDION ===== */
   .dash-link-accordion {
     width: 100%; text-align: left; background: transparent; border: none;
     cursor: pointer; color: rgba(255,255,255,.92); font-family: 'Nunito', sans-serif;
@@ -351,76 +358,158 @@
   .dash-sub-link:hover { background: rgba(255,255,255,.08); color: #fff; }
   .dash-sub-link.active { background: var(--yellow); color: #0f172a; }
 
-  /* ===== HEADER ===== */
   .dash-header { width: 100%; display: flex; flex-direction: column; gap: 4px; }
   .dash-header h1 { margin: 0; font-size: 26px; font-weight: 600; color: #184f61; }
   .dash-header p { margin: 0; font-size: 15px; color: #64748b; font-weight: 400; }
   .dash-header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
 
-  /* ===== BUTTON TAMBAH ===== */
   .btn-add {
-    border: 0; background: var(--sidebar); color: #fff; border-radius: 8px;
-    padding: 12px 18px; font-family: inherit; font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; gap: 10px;
+    border: 0;
+    background: var(--sidebar);
+    color: #fff;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: max-content;
   }
 
   html, body{
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
 
-.dash-main{
-  height: auto !important;
-  overflow: visible !important;
-}
+  .dash-main{
+    height: auto !important;
+    overflow: visible !important;
+  }
 
-/* ===== FIX SIDEBAR (SAMAKAN DENGAN KEL0LA AKUN SAYA) ===== */
+  .dash-sidebar {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-.dash-sidebar {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+  .dash-nav {
+    flex: 1;
+    overflow-y: auto;
+  }
 
-.dash-nav {
-  flex: 1;
-  overflow-y: auto;
-}
+  .dash-side-actions {
+    margin-top: auto;
+  }
 
-.dash-side-actions {
-  margin-top: auto;
-}
+  .dash-nav::-webkit-scrollbar {
+    width: 6px;
+  }
 
-/* scrollbar */
-.dash-nav::-webkit-scrollbar {
-  width: 6px;
-}
+  .dash-nav::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 10px;
+  }
 
-.dash-nav::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.3);
-  border-radius: 10px;
-}
+  .table-card {
+    width: 100%;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+  }
 
-  /* ===== TABLE ===== */
-  .table-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
-  table { width: 100%; border-collapse: collapse; }
-  thead { background: var(--sidebar); color: #fff; }
-  th, td { padding: 18px 16px; text-align: left; font-size: 15px; vertical-align: middle; }
-  tbody tr { border-bottom: 1px solid #d1d5db; }
-  tbody td { color: #24526c; }
+  table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
 
-  /* ===== STATUS ===== */
-  .status { display: inline-block; min-width: 90px; text-align: center; padding: 8px 14px; border-radius: 6px; font-size: 14px; }
+  .col-username { width: 18%; }
+  .col-unit { width: 16%; }
+  .col-email { width: 22%; }
+  .col-password { width: 18%; }
+  .col-status { width: 13%; }
+  .col-aksi { width: 13%; }
+
+  thead {
+    background: var(--sidebar);
+    color: #fff;
+  }
+
+  th,
+  td {
+    padding: 18px 16px;
+    text-align: left;
+    font-size: 15px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  th:nth-child(5),
+  td:nth-child(5),
+  th:nth-child(6),
+  td:nth-child(6) {
+    text-align: center;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #d1d5db;
+  }
+
+  tbody td {
+    color: #24526c;
+  }
+
+  .status {
+    display: inline-block;
+    min-width: 90px;
+    text-align: center;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
   .status.aktif { background: #a8dca1; color: #166534; }
   .status.nonaktif { background: #f2b4b4; color: #991b1b; }
 
-  /* ===== AKSI ===== */
-  .aksi { display: flex; align-items: center; gap: 14px; }
-  .icon-btn { border: 0; background: transparent; color: #1f5872; font-size: 18px; cursor: pointer; padding: 0; }
+  .aksi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .icon-btn {
+    border: 0;
+    background: transparent;
+    color: var(--unsoed-blue);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .icon-btn i,
+  .icon-btn .bi {
+    color: var(--unsoed-blue) !important;
+    -webkit-text-fill-color: var(--unsoed-blue) !important;
+    opacity: 1 !important;
+  }
+
+  .icon-btn:hover i,
+  .icon-btn:hover .bi {
+    color: #143f4d !important;
+    -webkit-text-fill-color: #143f4d !important;
+  }
+
   .form-delete { display: inline; margin: 0; padding: 0; }
   .empty-cell { text-align: center; color: #6b7280; padding: 28px 16px; }
 
-  /* ===== MODAL BACKDROP ===== */
   .modal-backdrop {
     position: fixed; inset: 0; background: rgba(15,23,42,0.28);
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
@@ -430,9 +519,14 @@
   .modal-backdrop.show { display: flex; }
 
   .modal-card {
-    width: 100%; max-width: 520px; background: #fff; border-radius: 20px;
-    box-shadow: 0 18px 40px rgba(0,0,0,.18); padding: 26px 28px;
-    max-height: 90vh; overflow-y: auto;
+    width: 100%;
+    max-width: 520px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.18);
+    padding: 26px 28px;
+    max-height: 90vh;
+    overflow-y: auto;
   }
   .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .modal-head h2 { margin: 0; font-size: 24px; color: #1f5872; font-weight: 700; }
@@ -440,26 +534,37 @@
   .modal-divider { height: 1px; background: #e5e7eb; margin: 18px 0 20px; }
   .modal-form { display: flex; flex-direction: column; gap: 14px; }
 
-  /* ===== FORM GROUP ===== */
   .form-group { display: flex; flex-direction: column; gap: 8px; }
   .form-group label { font-size: 15px; color: #1f5872; font-weight: 600; }
   .form-group input, .form-group select {
-    width: 100%; height: 46px; border: 1px solid #cfd5db; border-radius: 8px;
-    padding: 0 14px; font-size: 15px; font-family: inherit; color: #24526c;
-    outline: none; background: #fff;
+    width: 100%;
+    height: 46px;
+    border: 1px solid #cfd5db;
+    border-radius: 14px;
+    padding: 0 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #24526c;
+    outline: none;
+    background: #fff;
   }
   .form-group input:focus, .form-group select:focus { border-color: #1f5872; }
   .select-wrap { position: relative; }
   .select-wrap select { appearance: none; -webkit-appearance: none; padding-right: 42px; }
   .select-wrap i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #1f5872; pointer-events: none; font-size: 20px; }
 
-  /* ===== MODAL ACTIONS ===== */
   .modal-actions { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 6px; }
-  .btn-cancel, .btn-save { min-width: 116px; height: 46px; border-radius: 8px; font-family: inherit; font-size: 16px; cursor: pointer; }
+  .btn-cancel, .btn-save {
+    min-width: 116px;
+    height: 46px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+  }
   .btn-cancel { border: 1px solid #cfd5db; background: #fff; color: #1f5872; }
   .btn-save { border: 0; background: #1f5872; color: #fff; }
 
-  /* ===== TOAST ===== */
   .nt-wrap { position: fixed; top: 18px; right: 18px; z-index: 11000; pointer-events: none; }
   .nt-toast {
     width: min(380px, calc(100vw - 36px)); background: #fff; border: 1px solid #e6eef2;
@@ -483,7 +588,6 @@
   @keyframes ntOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(40px); } }
   @keyframes ntbar { from { width: 100%; } to { width: 0%; } }
 
-  /* ===== CONFIRM MODAL ===== */
   .cf-modal { position: fixed; inset: 0; z-index: 10000; display: none; }
   .cf-modal.is-open { display: flex; align-items: center; justify-content: center; padding: 12px; }
   .cf-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.40); backdrop-filter: blur(8px); }
@@ -502,11 +606,10 @@
   .cf-btn-danger { background: #ef4444; color: #fff; }
   .cf-btn-danger:hover { background: #dc2626; }
 
-  /* ===== RESPONSIVE ===== */
   @media (max-width: 900px) {
     .dash-header-row { flex-direction: column; align-items: stretch; }
-    .btn-add { justify-content: center; }
-    .modal-card { padding: 24px 20px; border-radius: 18px; }
+    .btn-add { justify-content: center; width: 100%; }
+    .modal-card { padding: 24px 20px; border-radius: 22px; }
     table { display: block; overflow-x: auto; }
   }
 </style>
@@ -514,7 +617,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-  /* ===== MODAL TAMBAH & EDIT ===== */
   const addModal = document.getElementById('addModal');
   const editModal = document.getElementById('editModal');
   const editForm  = document.getElementById('editForm');
@@ -546,7 +648,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* ===== ACCORDION SIDEBAR ===== */
   const parent = document.getElementById('kelolaAkunParent');
   const sub    = document.getElementById('kelolaAkunSub');
   if (parent && sub) {
@@ -556,7 +657,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  /* ===== TOAST ===== */
   function closeToast(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -568,7 +668,6 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('ntCloseBtn')?.addEventListener('click',    () => closeToast('ntToast'));
   document.getElementById('ntCloseBtnErr')?.addEventListener('click', () => closeToast('ntToastErr'));
 
-  /* ===== CONFIRM HAPUS ===== */
   const cfModal      = document.getElementById('cfModal');
   const cfCancelBtn  = document.getElementById('cfCancelBtn');
   const cfCloseBtn   = document.getElementById('cfCloseBtn');
@@ -597,5 +696,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 </script>
+@include('Partials.chatbot')
 </body>
 </html>

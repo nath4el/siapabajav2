@@ -273,7 +273,7 @@
 }
 
 .dash-header p{
-  margin:0;
+  margin:10;
   color:#64748b;
 }
 
@@ -600,6 +600,6 @@
     });
   });
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

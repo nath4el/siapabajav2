@@ -20,7 +20,7 @@
         Regulasi
       </a>
 
-      {{-- ARSIP PBJ (HALAMAN TERPISAH) --}}
+      {{-- ARSIP PBJ --}}
       <a
         href="{{ route('ArsipPBJ') }}"
         class="nav-link {{ request()->routeIs('ArsipPBJ') ? 'active' : '' }}"
@@ -36,35 +36,10 @@
         Kontak
       </a>
 
-      {{-- GUEST --}}
-      @guest
-        <a class="btn btn-white" href="{{ route('login') }}">
-          Masuk
-        </a>
-      @endguest
-
-      {{-- AUTH --}}
-      @auth
-        <div class="nav-user">
-          <button type="button" class="nav-user-btn" aria-label="User menu">
-            <i class="bi bi-person-circle"></i>
-          </button>
-
-          <div class="nav-user-menu">
-            <div class="nav-user-name">
-              {{ Auth::user()->name ?? 'User' }}
-            </div>
-
-            <form action="{{ route('logout') }}" method="POST">
-              @csrf
-              <button type="submit" class="nav-logout">
-                <i class="bi bi-box-arrow-right"></i>
-                Keluar
-              </button>
-            </form>
-          </div>
-        </div>
-      @endauth
+      {{-- ✅ SELALU TAMPIL LOGIN (FIX FINAL) --}}
+      <a class="btn btn-white" href="{{ route('login') }}">
+        Masuk
+      </a>
 
     </nav>
 

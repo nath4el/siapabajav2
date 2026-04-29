@@ -11,18 +11,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ asset('css/Unit.css') }}">
 </head>
-<body class="dash-body page-km"></body>
+
 <body class="dash-body page-km">
 @php
-  /*
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Controller wajib kirim 4 collection:                       │
-  │  $tahunItems   → id, nama, status ('aktif'/'tidak_aktif')   │
-  │  $unitItems    → id, nama, status                           │
-  │  $statusItems  → id, nama, status                           │
-  │  $jenisItems   → id, nama, status                           │
-  └─────────────────────────────────────────────────────────────┘
-  */
   $tahunItems  = $tahunItems  ?? collect();
   $unitItems   = $unitItems   ?? collect();
   $statusItems = $statusItems ?? collect();
@@ -65,60 +56,61 @@
 <div class="dash-wrap">
   {{-- ═══════════ SIDEBAR ═══════════ --}}
   <aside class="dash-sidebar">
-  <div class="dash-brand">
-    <div class="dash-logo">
-      <img src="{{ asset('image/Logo_Unsoed.png') }}" alt="Logo Unsoed">
+    <div class="dash-brand">
+      <div class="dash-logo">
+        <img src="{{ asset('image/Logo_Unsoed.png') }}" alt="Logo Unsoed">
+      </div>
+      <div class="dash-text">
+        <div class="dash-app">SIAPABAJA</div>
+        <div class="dash-role">Super Admin</div>
+      </div>
     </div>
-    <div class="dash-text">
-      <div class="dash-app">SIAPABAJA</div>
-      <div class="dash-role">Super Admin</div>
+
+    <nav class="dash-nav">
+      <a class="dash-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}"
+         href="{{ route('superadmin.dashboard') }}">
+        <span class="ic"><i class="bi bi-grid-fill"></i></span>
+        Dashboard
+      </a>
+
+      <a class="dash-link {{ request()->routeIs('superadmin.arsip*') ? 'active' : '' }}"
+         href="{{ route('superadmin.arsip') }}">
+        <span class="ic"><i class="bi bi-archive"></i></span>
+        Arsip PBJ
+      </a>
+
+      <a class="dash-link {{ request()->routeIs('superadmin.pengadaan.create') ? 'active' : '' }}"
+         href="{{ route('superadmin.pengadaan.create') }}">
+        <span class="ic"><i class="bi bi-plus-square"></i></span>
+        Tambah Pengadaan
+      </a>
+
+      <a class="dash-link {{ request()->routeIs('superadmin.kelola.menu') ? 'active' : '' }}"
+         href="{{ route('superadmin.kelola.menu') }}">
+        <span class="ic"><i class="bi bi-gear-fill"></i></span>
+        Kelola Menu
+      </a>
+
+      <a class="dash-link {{ request()->routeIs('superadmin.kelola.akun*') ? 'active' : '' }}"
+         href="{{ route('superadmin.kelola.akun') }}">
+        <span class="ic"><i class="bi bi-person-gear"></i></span>
+        Kelola Akun
+      </a>
+    </nav>
+
+    <div class="dash-side-actions">
+      <a class="dash-side-btn" href="{{ route('home') }}">
+        <i class="bi bi-house-door"></i>
+        Kembali
+      </a>
+
+      <a class="dash-side-btn" href="{{ url('/logout') }}">
+        <i class="bi bi-box-arrow-right"></i>
+        Keluar
+      </a>
     </div>
-  </div>
+  </aside>
 
-  <nav class="dash-nav">
-    <a class="dash-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}"
-       href="{{ route('superadmin.dashboard') }}">
-      <span class="ic"><i class="bi bi-grid-fill"></i></span>
-      Dashboard
-    </a>
-
-    <a class="dash-link {{ request()->routeIs('superadmin.arsip*') ? 'active' : '' }}"
-       href="{{ route('superadmin.arsip') }}">
-      <span class="ic"><i class="bi bi-archive"></i></span>
-      Arsip PBJ
-    </a>
-
-    <a class="dash-link {{ request()->routeIs('superadmin.pengadaan.create') ? 'active' : '' }}"
-       href="{{ route('superadmin.pengadaan.create') }}">
-      <span class="ic"><i class="bi bi-plus-square"></i></span>
-      Tambah Pengadaan
-    </a>
-
-    <a class="dash-link {{ request()->routeIs('superadmin.kelola.menu') ? 'active' : '' }}"
-       href="{{ route('superadmin.kelola.menu') }}">
-      <span class="ic"><i class="bi bi-gear-fill"></i></span>
-      Kelola Menu
-    </a>
-
-    <a class="dash-link {{ request()->routeIs('superadmin.kelola.akun*') ? 'active' : '' }}"
-       href="{{ route('superadmin.kelola.akun') }}">
-      <span class="ic"><i class="bi bi-person-gear"></i></span>
-      Kelola Akun
-    </a>
-  </nav>
-
-  <div class="dash-side-actions">
-    <a class="dash-side-btn" href="{{ route('home') }}">
-      <i class="bi bi-house-door"></i>
-      Kembali
-    </a>
-
-    <a class="dash-side-btn" href="{{ url('/logout') }}">
-      <i class="bi bi-box-arrow-right"></i>
-      Keluar
-    </a>
-  </div>
-</aside>
   {{-- ═══════════ MAIN ═══════════ --}}
   <main class="dash-main">
     <header class="km-header">
@@ -285,8 +277,6 @@
   </div>
 </div>
 
-
-
 {{-- ═══════════ TOAST JS ═══════════ --}}
 <div class="nt-wrap" id="jsToastWrap" style="display:none;position:fixed;top:18px;right:18px;z-index:11000;">
   <div class="nt-toast" id="jsToast">
@@ -382,8 +372,6 @@ body.page-km .km-header{
   color:#1f4f5f;
 }
 
-
-
 /* BUTTON TAMBAH */
 .km-add-btn{
   background:#1f4f5f;
@@ -402,26 +390,29 @@ body.page-km .km-header{
 /* ===== TABLE ===== */
 .km-table{
   width:100%;
+  overflow:hidden;
 }
 
 /* HEADER TABLE */
 .km-tbl-head{
   display:grid;
-  grid-template-columns:60px 2fr 120px 120px;
+  grid-template-columns: 12% 40% 24% 24%;
   background:#1f4f5f;
   color:#fff;
   padding:12px 20px;
   font-size:14px;
+  width:100%;
 }
 
 /* ROW */
 .km-tbl-row{
   display:grid;
-  grid-template-columns:60px 2fr 120px 120px;
+  grid-template-columns: 12% 40% 24% 24%;
   align-items:center;
   padding:14px 20px;
   border-top:1px solid #eee;
   background:#fff;
+  width:100%;
 }
 
 .km-tbl-row:nth-child(even){
@@ -431,6 +422,98 @@ body.page-km .km-header{
 /* TEXT */
 .km-col{
   font-size:14px;
+  min-width:0;
+}
+
+.km-col-no{
+  text-align:left;
+}
+
+.km-col-nama{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.km-col-status{
+  text-align:center;
+}
+
+.km-col-aksi{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+
+/* STATUS BADGE */
+.km-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:90px;
+  padding:5px 12px;
+  border-radius:8px;
+  font-size:12px;
+}
+
+.km-badge-aktif{
+  background:#c8e6c9;
+  color:#2e7d32;
+}
+
+.km-badge-nonaktif{
+  background:#ffcdd2;
+  color:#c62828;
+}
+
+/* ICON */
+.km-icbtn{
+  background:none;
+  border:none;
+  cursor:pointer;
+  font-size:16px;
+  color:#1f4f5f;
+  padding:0;
+}
+
+/* ===== TOGGLE ===== */
+.km-toggle{
+  width:34px;
+  height:18px;
+  border-radius:20px;
+  background:#ddd;
+  position:relative;
+  border:none;
+  cursor:pointer;
+  padding:0;
+  flex:0 0 auto;
+}
+
+.km-toggle.is-on{
+  background:#81c784;
+}
+
+.km-toggle-knob{
+  width:14px;
+  height:14px;
+  background:#fff;
+  border-radius:50%;
+  position:absolute;
+  top:2px;
+  left:2px;
+  transition:0.2s;
+}
+
+.km-toggle.is-on .km-toggle-knob{
+  transform:translateX(16px);
+}
+
+/* ===== EMPTY ===== */
+.km-empty{
+  padding:25px;
+  text-align:center;
+  color:#9aa7b3;
 }
 
 .km-modal{
@@ -447,11 +530,7 @@ body.page-km .km-header{
 .km-modal-backdrop{
   position: absolute;
   inset: 0;
-
-  /* warna biru kamu (LEBIH PEKAT) */
   background: rgba(29, 83, 108, 0.6) !important;
-
-  /* blur tetap ada */
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -471,14 +550,6 @@ body.page-km .km-header{
   padding: 20px;
   box-shadow: 0 20px 50px rgba(0,0,0,0.2);
 }
-/* =========================
-   KHUSUS KELOLA MENU (AMAN)
-========================= */
-
-/* =========================
-   FIX MODAL (MATCH HTML KAMU)
-========================= */
-
 
 /* =========================
    MODAL FINAL (CLEAN UI)
@@ -505,12 +576,9 @@ body.page-km .km-header{
   background: #ffffff;
   border-radius: 16px;
   padding: 22px 24px;
-  
-  /* SHADOW HALUS BANGET */
   box-shadow:
     0 10px 25px rgba(0,0,0,0.08),
     0 4px 10px rgba(0,0,0,0.05);
-
   animation: fadeScale 0.18s ease;
 }
 
@@ -634,6 +702,7 @@ body.page-km .km-header p{
   margin-top: 4px;
   margin-bottom: 0;
 }
+
 /* SIDEBAR TETAP STICKY */
 body.page-km .dash-sidebar{
   position: sticky !important;
@@ -643,7 +712,7 @@ body.page-km .dash-sidebar{
 
 /* BIKIN KONTEN LEBIH LEGA */
 body.page-km .dash-main{
-  margin-left: 0 !important; /* karena pakai flex */
+  margin-left: 0 !important;
 }
 
 /* GRID CARD */
@@ -653,12 +722,17 @@ body.page-km .km-grid{
   gap: 30px;
 }
 
-/* TABLE FIX BIAR GAK NGE-CRAMP */
+/* TABLE FIX BIAR NGEFIT KANAN KIRI */
+body.page-km .km-table{
+  width:100%;
+}
+
 body.page-km .km-tbl-head,
 body.page-km .km-tbl-row{
   display: grid;
-  grid-template-columns: 60px 2fr 120px 120px;
+  grid-template-columns: 12% 40% 24% 24%;
   align-items: center;
+  width:100%;
 }
 
 /* BIAR RAPI */
@@ -672,76 +746,6 @@ body.page-km .km-section{
   body.page-km .km-grid{
     grid-template-columns: 1fr;
   }
-}
-
-/* STATUS BADGE */
-.km-badge{
-  padding:5px 12px;
-  border-radius:8px;
-  font-size:12px;
-}
-
-.km-badge-aktif{
-  background:#c8e6c9;
-  color:#2e7d32;
-}
-
-.km-badge-nonaktif{
-  background:#ffcdd2;
-  color:#c62828;
-}
-
-/* ===== AKSI ===== */
-.km-col-aksi{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-/* ICON */
-.km-icbtn{
-  background:none;
-  border:none;
-  cursor:pointer;
-  font-size:16px;
-  color:#1f4f5f;
-}
-
-/* ===== TOGGLE ===== */
-.km-toggle{
-  width:34px;
-  height:18px;
-  border-radius:20px;
-  background:#ddd;
-  position:relative;
-  border:none;
-  cursor:pointer;
-}
-
-.km-toggle.is-on{
-  background:#81c784;
-}
-
-.km-toggle-knob{
-  width:14px;
-  height:14px;
-  background:#fff;
-  border-radius:50%;
-  position:absolute;
-  top:2px;
-  left:2px;
-  transition:0.2s;
-}
-
-.km-toggle.is-on .km-toggle-knob{
-  transform:translateX(16px);
-}
-
-/* ===== EMPTY ===== */
-.km-empty{
-  padding:25px;
-  text-align:center;
-  color:#9aa7b3;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -799,7 +803,6 @@ function showToast(msg, isError = false){
   desc.textContent  = msg;
   wrap.style.display = '';
 
-  // restart bar animation
   bar.style.animation = 'none';
   bar.offsetHeight;
   bar.style.animation = '';
@@ -928,10 +931,8 @@ function appendRow(type, item){
   const aktif  = (item.status || 'aktif').toLowerCase() === 'aktif';
   const count  = body.querySelectorAll('.km-tbl-row').length + 1;
 
-  // find the section to get field/label
   const secEl = document.getElementById('sec-' + type);
   const addBtn = secEl?.querySelector('.km-add-btn');
-  // retrieve field/label from onclick attr
   const onclickStr = addBtn?.getAttribute('onclick') || '';
   const match = onclickStr.match(/openAdd\('([^']+)','([^']+)','([^']+)'\)/);
   const label = match ? match[2] : type;
@@ -972,7 +973,6 @@ function updateRow(type, id, nama){
   const nameEl = row.querySelector('.km-nama-val');
   if(nameEl) nameEl.textContent = nama;
 
-  // update onclick attrs
   const editBtn = row.querySelector('.km-icbtn-edit');
   const delBtn  = row.querySelector('.km-icbtn-del');
   if(editBtn){
@@ -1044,7 +1044,6 @@ async function toggleStatus(btn){
 
     btn.classList.toggle('is-on', !isOn);
 
-    // update badge in same row
     const row   = btn.closest('.km-tbl-row');
     const badge = row?.querySelector('.km-badge');
     if(badge){
@@ -1098,7 +1097,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if(empty) empty.hidden = rows.length > 0;
   });
 
-  // blade toast auto-close
   const nt = document.getElementById('ntToast');
   if(nt){
     document.getElementById('ntCloseBtn')?.addEventListener('click', () => nt.parentElement?.remove());
@@ -1110,6 +1108,6 @@ document.addEventListener('DOMContentLoaded', function(){
 function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function escAttr(s){ return (s||'').replace(/'/g,"\\'"); }
 </script>
-
+@include('Partials.chatbot')
 </body>
 </html>

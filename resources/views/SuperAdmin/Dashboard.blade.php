@@ -153,33 +153,42 @@
         {{-- Total Arsip Pengadaan --}}
         <div class="u-card">
           <div class="u-bar u-bar--navy"></div>
+
           <div class="u-top">
             <div>
               <div class="u-label">{{ $summary[5]['label'] }}</div>
               <div class="u-value u-value--navy js-count" id="valPaket"
                    data-count="{{ (int) $summary[0]['value'] }}">0</div>
-              <div class="u-sub">{{ $summary[5]['sub'] }}</div>
             </div>
-            <div class="u-ic"><i class="bi {{ $summary[5]['icon'] }}"></i></div>
+
+            <div class="u-ic">
+              <i class="bi {{ $summary[5]['icon'] }}"></i>
+            </div>
           </div>
-          <div class="u-card-filter">
-            <div class="u-mini-select">
-              <select id="fTahunPaket">
-                <option value="">Semua Tahun</option>
-                @foreach($tahunOptions as $t)
-                  <option value="{{ $t }}">{{ $t }}</option>
-                @endforeach
-              </select>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="u-mini-select">
-              <select id="fUnitPaket">
-                <option value="">Semua Unit</option>
-                @foreach($unitOptions as $u)
-                  <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
-                @endforeach
-              </select>
-              <i class="bi bi-chevron-down"></i>
+
+          <div class="u-sub-filter-row">
+            <div class="u-sub">{{ $summary[5]['sub'] }}</div>
+
+            <div class="u-card-filter">
+              <div class="u-mini-select">
+                <select id="fTahunPaket">
+                  <option value="">Tahun</option>
+                  @foreach($tahunOptions as $t)
+                    <option value="{{ $t }}">{{ $t }}</option>
+                  @endforeach
+                </select>
+                <i class="bi bi-chevron-down"></i>
+              </div>
+
+              <div class="u-mini-select">
+                <select id="fUnitPaket">
+                  <option value="">Unit</option>
+                  @foreach($unitOptions as $u)
+                    <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
+                  @endforeach
+                </select>
+                <i class="bi bi-chevron-down"></i>
+              </div>
             </div>
           </div>
         </div>
@@ -187,33 +196,42 @@
         {{-- Total Nilai Pengadaan --}}
         <div class="u-card">
           <div class="u-bar u-bar--yellow"></div>
+
           <div class="u-top">
             <div>
               <div class="u-label">{{ $summary[6]['label'] }}</div>
               <div class="u-money js-count" id="valNilai"
                    data-count="{{ (int) preg_replace('/[^0-9]/','', (string) $summary[6]['value']) }}">Rp 0</div>
-              <div class="u-sub">{{ $summary[6]['sub'] }}</div>
             </div>
-            <div class="u-ic u-ic--yellow"><i class="bi {{ $summary[6]['icon'] }}"></i></div>
+
+            <div class="u-ic u-ic--yellow">
+              <i class="bi {{ $summary[6]['icon'] }}"></i>
+            </div>
           </div>
-          <div class="u-card-filter">
-            <div class="u-mini-select">
-              <select id="fTahunNilai">
-                <option value="">Semua Tahun</option>
-                @foreach($tahunOptions as $t)
-                  <option value="{{ $t }}">{{ $t }}</option>
-                @endforeach
-              </select>
-              <i class="bi bi-chevron-down"></i>
-            </div>
-            <div class="u-mini-select">
-              <select id="fUnitNilai">
-                <option value="">Semua Unit</option>
-                @foreach($unitOptions as $u)
-                  <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
-                @endforeach
-              </select>
-              <i class="bi bi-chevron-down"></i>
+
+          <div class="u-sub-filter-row">
+            <div class="u-sub">{{ $summary[6]['sub'] }}</div>
+
+            <div class="u-card-filter">
+              <div class="u-mini-select">
+                <select id="fTahunNilai">
+                  <option value="">Tahun</option>
+                  @foreach($tahunOptions as $t)
+                    <option value="{{ $t }}">{{ $t }}</option>
+                  @endforeach
+                </select>
+                <i class="bi bi-chevron-down"></i>
+              </div>
+
+              <div class="u-mini-select">
+                <select id="fUnitNilai">
+                  <option value="">Unit</option>
+                  @foreach($unitOptions as $u)
+                    <option value="{{ $u['id'] }}">{{ $u['name'] }}</option>
+                  @endforeach
+                </select>
+                <i class="bi bi-chevron-down"></i>
+              </div>
             </div>
           </div>
         </div>
@@ -342,26 +360,22 @@
 </div>
 
 <style>
-  /* ============================================================
-     SUPERADMIN DASHBOARD — override & tambahan
-     (Unit.css sudah di-load, ini hanya patch khusus halaman ini)
-  ============================================================ */
-
   body.is-modal-open { overflow: hidden !important; }
 
-  /* Header */
   .dash-header {
     display: flex;
     flex-direction: column;
     gap: 4px;
     margin-bottom: 20px;
   }
+
   .dash-header h1 {
     margin: 0;
     font-size: 26px;
     font-weight: 600;
     color: #184f61;
   }
+
   .dash-header p {
     margin: 0;
     font-size: 15px;
@@ -369,19 +383,16 @@
     font-weight: 400;
   }
 
-  /* Warna & bar hijau (superadmin punya warna ekstra) */
-  .u-bar--green   { background: #22c55e; }
+  .u-bar--green { background: #22c55e; }
   .u-value--green { color: #16a34a; }
-  .u-ic--green    { color: #16a34a; background: #dcfce7; }
-  .u-value--yellow{ color: #d39a00; }
+  .u-ic--green { color: #16a34a; background: #dcfce7; }
+  .u-value--yellow { color: #d39a00; }
 
-  /* Summary rows */
-  .u-sum          { display: grid; gap: 16px; }
-  .u-sum-row      { display: grid; gap: 16px; }
-  .u-sum-row--5   { grid-template-columns: repeat(5, minmax(0,1fr)); }
-  .u-sum-row--2   { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .u-sum { display: grid; gap: 16px; }
+  .u-sum-row { display: grid; gap: 16px; }
+  .u-sum-row--5 { grid-template-columns: repeat(5, minmax(0,1fr)); }
+  .u-sum-row--2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
 
-  /* Card base */
   .u-card {
     background: #fff;
     border: 1px solid #e6eef2;
@@ -392,44 +403,85 @@
     padding: 16px 16px 14px;
     min-height: 86px;
   }
+
   .u-bar {
-    position: absolute; left:0; top:0; bottom:0;
-    width: 4px; border-radius: 14px 0 0 14px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 14px 0 0 14px;
   }
-  .u-bar--navy   { background: #184f61; }
+
+  .u-bar--navy { background: #184f61; }
   .u-bar--yellow { background: #f6c100; }
-  .u-bar--gray   { background: #0f172a; opacity:.75; }
+  .u-bar--gray { background: #0f172a; opacity: .75; }
 
-  .u-top   { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
-  .u-label { font-size: 14px; color: #64748b; margin-bottom: 6px; font-weight: 400; }
-  .u-value { font-size: 32px; line-height: 1; font-weight: 400; }
-  .u-value--navy { color: #184f61; }
-  .u-value--gray { color: #0f172a; opacity:.85; }
-  .u-money { font-size: 32px; line-height: 1.05; color: #c98800; font-weight: 400; }
-  .u-sub   { margin-top: 8px; font-size: 13px; color: #94a3b8; font-weight: 400; }
-
-  .u-ic {
-    width: 40px; height: 40px;
-    display: grid; place-items: center;
-    border-radius: 10px;
-    background: #f1f5f9;
-    color: #184f61;
-    font-size: 20px;
-    flex: 0 0 auto;
+  .u-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
   }
-  .u-ic--yellow { color: #c98800; background: #fff6cc; }
-  .u-ic--gray   { color: #0f172a; background: #eef2f7; }
 
-  /* Filter mini di dalam card */
+  .u-label {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 6px;
+    font-weight: 400;
+  }
+
+  .u-value {
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 400;
+  }
+
+  .u-value--navy { color: #184f61; }
+  .u-value--gray { color: #0f172a; opacity: .85; }
+
+  .u-money {
+    font-size: 32px;
+    line-height: 1.05;
+    color: #c98800;
+    font-weight: 400;
+  }
+
+  .u-sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
+  .u-sub-filter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  .u-sub-filter-row .u-sub {
+    margin-top: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
   .u-card-filter {
     display: flex;
     gap: 8px;
     align-items: center;
     justify-content: flex-end;
-    margin-top: 10px;
-    flex-wrap: wrap;
+    margin-top: 0;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
   }
-  .u-mini-select { position: relative; }
+
+  .u-mini-select {
+    position: relative;
+  }
+
   .u-mini-select select {
     border: 1px solid #e2e8f0;
     border-radius: 10px;
@@ -441,23 +493,46 @@
     outline: none;
     appearance: none;
     cursor: pointer;
-    max-width: 140px;
-    width: 100%;
-  }
-  .u-mini-select i {
-    position: absolute; right: 10px; top: 50%;
-    transform: translateY(-50%);
-    opacity: .6; pointer-events: none; font-size: 12px;
+    width: 80px;
+    max-width: 80px;
   }
 
-  /* Tombol info (i) */
+  .u-mini-select i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .6;
+    pointer-events: none;
+    font-size: 12px;
+  }
+
+  .u-ic {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #184f61;
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+
+  .u-ic--yellow { color: #c98800; background: #fff6cc; }
+  .u-ic--gray { color: #0f172a; background: #eef2f7; }
+
   .u-info-btn {
-    position: absolute; right: 0; top: 0;
-    width: 26px; height: 26px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 26px;
+    height: 26px;
     border-radius: 999px;
     border: 2px solid #184f61;
     background: #fff;
-    display: grid; place-items: center;
+    display: grid;
+    place-items: center;
     cursor: pointer;
     padding: 0;
     color: #184f61;
@@ -465,17 +540,32 @@
   }
 
   .u-card--unit .u-info-btn--card {
-  top: auto;
-  bottom: 12px;
-  right: 12px;
-}
-  .u-info-btn i { font-size: 14px; opacity: .9; pointer-events: none; }
-  .u-info-btn:hover { border-color: #143f4d; transform: translateY(-.5px); }
-  .u-info-btn--card { position: absolute; right: 12px; top: 12px; }
+    top: auto;
+    bottom: 12px;
+    right: 12px;
+  }
 
-  /* Popover */
+  .u-info-btn i {
+    font-size: 14px;
+    opacity: .9;
+    pointer-events: none;
+  }
+
+  .u-info-btn:hover {
+    border-color: #143f4d;
+    transform: translateY(-.5px);
+  }
+
+  .u-info-btn--card {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+  }
+
   .u-popover {
-    position: absolute; right: 0; top: 30px;
+    position: absolute;
+    right: 0;
+    top: 30px;
     width: 340px;
     background: #fff;
     border: 1px solid #e6eef2;
@@ -485,36 +575,95 @@
     z-index: 50;
     display: none;
   }
+
   .u-popover.is-open { display: block; }
+
   .u-popover::before {
     content: "";
-    position: absolute; right: 12px; top: -6px;
-    width: 10px; height: 10px;
+    position: absolute;
+    right: 12px;
+    top: -6px;
+    width: 10px;
+    height: 10px;
     background: #fff;
     border-left: 1px solid #e6eef2;
     border-top: 1px solid #e6eef2;
     transform: rotate(45deg);
   }
-  .u-popover-title { font-size: 13px; color: #0f172a; margin-bottom: 4px; font-weight: 400; }
-  .u-popover-meta  { font-size: 12px; color: #64748b; margin-bottom: 8px; }
-  .u-popover-list  { display: grid; gap: 6px; max-height: 160px; overflow: auto; }
-  .u-popover-row   {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    border: 1px solid #eef2f7; border-radius: 10px; padding: 8px;
-  }
-  .u-popover-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .u-dot          { width: 8px; height: 8px; border-radius: 999px; background: #184f61; flex: 0 0 auto; }
-  .u-popover-name { font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .u-popover-val  { font-size: 13px; color: #0f172a; flex: 0 0 auto; }
-  .u-popover-foot { margin-top: 8px; font-size: 11px; color: #94a3b8; text-align: right; }
 
-  /* Charts */
+  .u-popover-title {
+    font-size: 13px;
+    color: #0f172a;
+    margin-bottom: 4px;
+    font-weight: 400;
+  }
+
+  .u-popover-meta {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  .u-popover-list {
+    display: grid;
+    gap: 6px;
+    max-height: 160px;
+    overflow: auto;
+  }
+
+  .u-popover-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border: 1px solid #eef2f7;
+    border-radius: 10px;
+    padding: 8px;
+  }
+
+  .u-popover-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .u-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #184f61;
+    flex: 0 0 auto;
+  }
+
+  .u-popover-name {
+    font-size: 13px;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .u-popover-val {
+    font-size: 13px;
+    color: #0f172a;
+    flex: 0 0 auto;
+  }
+
+  .u-popover-foot {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: right;
+  }
+
   .u-charts {
     margin-top: 18px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0,1fr));
     gap: 18px;
   }
+
   .u-chart-card {
     background: #fff;
     border: 1px solid #e6eef2;
@@ -523,6 +672,7 @@
     box-shadow: 0 10px 20px rgba(2,8,23,.04);
     position: relative;
   }
+
   .u-chart-head {
     position: relative;
     display: flex;
@@ -530,13 +680,32 @@
     justify-content: center;
     min-height: 28px;
   }
-  .u-chart-title  { font-size: 18px; color: #0f172a; font-weight: 600; text-align: center; margin-top: 2px; }
-  .u-chart-divider{ height: 1px; background: #e6eef2; margin: 10px 0 12px; }
-  .u-chart-filters{
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; margin-bottom: 12px;
+
+  .u-chart-title {
+    font-size: 18px;
+    color: #0f172a;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 2px;
   }
-  .u-select { position: relative; }
+
+  .u-chart-divider {
+    height: 1px;
+    background: #e6eef2;
+    margin: 10px 0 12px;
+  }
+
+  .u-chart-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .u-select {
+    position: relative;
+  }
+
   .u-select select {
     width: 100%;
     border: 1px solid #e2e8f0;
@@ -548,24 +717,49 @@
     appearance: none;
     font-weight: 400;
   }
-  .u-select i {
-    position: absolute; right: 10px; top: 50%;
-    transform: translateY(-50%);
-    opacity: .6; pointer-events: none;
-  }
-  .u-canvas-wrap { height: 260px; display: flex; align-items: center; justify-content: center; }
-  .u-canvas-wrap canvas { max-height: 260px !important; }
 
-  /* Modal unit kerja */
-  .u-modal          { position: fixed; inset: 0; z-index: 999; display: none; }
-  .u-modal.is-open  { display: block; }
+  .u-select i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .6;
+    pointer-events: none;
+  }
+
+  .u-canvas-wrap {
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .u-canvas-wrap canvas {
+    max-height: 260px !important;
+  }
+
+  .u-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: none;
+  }
+
+  .u-modal.is-open {
+    display: block;
+  }
+
   .u-modal-backdrop {
-    position: absolute; inset: 0;
+    position: absolute;
+    inset: 0;
     background: rgba(2,8,23,.35);
     backdrop-filter: blur(8px);
   }
+
   .u-modal-dialog {
-    position: absolute; left: 50%; top: 50%;
+    position: absolute;
+    left: 50%;
+    top: 50%;
     transform: translate(-50%,-50%);
     width: min(980px, calc(100vw - 44px));
     height: min(86vh, 720px);
@@ -577,99 +771,212 @@
     display: grid;
     grid-template-rows: auto 1fr auto;
   }
+
   .u-modal-head {
     padding: 14px 16px;
     border-bottom: 1px solid #e6eef2;
-    display: flex; align-items: flex-start;
-    justify-content: space-between; gap: 12px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
   }
-  .u-modal-title .t1 { font-size: 18px; color: #0f172a; font-weight: 400; }
-  .u-modal-title .t2 { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  .u-modal-title .t1 {
+    font-size: 18px;
+    color: #0f172a;
+    font-weight: 400;
+  }
+
+  .u-modal-title .t2 {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
   .u-modal-close {
-    width: 38px; height: 38px;
+    width: 38px;
+    height: 38px;
     border-radius: 12px;
     border: 1px solid #e6eef2;
     background: #fff;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    color: #0f172a; padding: 0;
+    color: #0f172a;
+    padding: 0;
   }
-  .u-modal-body { padding: 14px 16px 16px; overflow: auto; }
-  .u-unit-grid  { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-  .u-unit-item  {
-    border: 1px solid #eef2f7; border-radius: 14px;
-    padding: 12px; display: flex; align-items: center; gap: 10px; background: #fff;
-  }
-  .u-unit-badge {
-    min-width: 34px; height: 30px; border-radius: 999px;
-    display: grid; place-items: center;
-    font-size: 13px; color: #184f61;
-    background: #e9f3f6; border: 1px solid #d7e9ee; flex: 0 0 auto;
-  }
-  .u-unit-name {
-    font-size: 15px; color: #0f172a;
-    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .u-modal-foot {
-    padding: 12px 16px; border-top: 1px solid #e6eef2;
-    display: flex; align-items: center; justify-content: flex-end;
-  }
-  .u-modal-hint { font-size: 12px; color: #94a3b8; }
 
-  /* Responsive */
+  .u-modal-body {
+    padding: 14px 16px 16px;
+    overflow: auto;
+  }
+
+  .u-unit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 10px;
+  }
+
+  .u-unit-item {
+    border: 1px solid #eef2f7;
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+  }
+
+  .u-unit-badge {
+    min-width: 34px;
+    height: 30px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    color: #184f61;
+    background: #e9f3f6;
+    border: 1px solid #d7e9ee;
+    flex: 0 0 auto;
+  }
+
+  .u-unit-name {
+    font-size: 15px;
+    color: #0f172a;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .u-modal-foot {
+    padding: 12px 16px;
+    border-top: 1px solid #e6eef2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .u-modal-hint {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
   @media (max-width: 1200px) {
-    .u-sum-row--5 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .u-sum-row--5 {
+      grid-template-columns: repeat(3, minmax(0,1fr));
+    }
   }
+
   @media (max-width: 900px) {
-    .u-sum-row--5 { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    .u-sum-row--2 { grid-template-columns: 1fr; }
-    .u-charts     { grid-template-columns: 1fr; }
+    .u-sum-row--5 {
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    .u-sum-row--2 {
+      grid-template-columns: 1fr;
+    }
+
+    .u-charts {
+      grid-template-columns: 1fr;
+    }
+
+    .u-sub-filter-row {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .u-card-filter {
+      width: 100%;
+      justify-content: flex-start;
+    }
   }
+
   @media (max-width: 600px) {
-    .u-sum-row--5 { grid-template-columns: 1fr; }
+    .u-sum-row--5 {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
-  /* ============================================================
-     COUNT-UP ANIMATION
-  ============================================================ */
   const CountFX = (() => {
     const DURATION = 1200;
     const ease = (t) => 1 - Math.pow(1 - t, 3);
-    const parse = (s) => { const n = Number(String(s ?? '').replace(/[^\d.-]/g,'')); return isFinite(n) ? n : 0; };
+    const parse = (s) => {
+      const n = Number(String(s ?? '').replace(/[^\d.-]/g,''));
+      return isFinite(n) ? n : 0;
+    };
     const fmtID = (n) => Math.round(n).toLocaleString('id-ID');
     const fmtRp = (n) => {
-      const x = Math.max(0, Math.round(Number(n||0)));
-      const p = x.toString().split(''); let out = '';
-      for(let i=0;i<p.length;i++){ const idx=p.length-i; out+=p[i]; if(idx>1&&idx%3===1)out+='.'; }
-      return 'Rp '+out;
+      const x = Math.max(0, Math.round(Number(n || 0)));
+      const p = x.toString().split('');
+      let out = '';
+      for(let i = 0; i < p.length; i++){
+        const idx = p.length - i;
+        out += p[i];
+        if(idx > 1 && idx % 3 === 1) out += '.';
+      }
+      return 'Rp ' + out;
     };
+
     const isMoney = (el) => el.classList.contains('u-money') || /rp/i.test(String(el.textContent));
     const set = (el, v) => { el.textContent = isMoney(el) ? fmtRp(v) : fmtID(v); };
-    const target = (el) => { const d=el.getAttribute('data-count'); return d!=null&&d!=='' ? parse(d) : parse(el.textContent); };
+    const target = (el) => {
+      const d = el.getAttribute('data-count');
+      return d != null && d !== '' ? parse(d) : parse(el.textContent);
+    };
 
-    const run = (el, to, dur=DURATION) => {
-      const from=0, s=performance.now(); set(el,0);
-      const tick=(now)=>{ const t=Math.min(1,(now-s)/dur),c=from+(to-from)*ease(t); set(el,c); if(t<1)requestAnimationFrame(tick); };
+    const run = (el, to, dur = DURATION) => {
+      const from = 0;
+      const s = performance.now();
+      set(el, 0);
+      const tick = (now) => {
+        const t = Math.min(1, (now - s) / dur);
+        const c = from + (to - from) * ease(t);
+        set(el, c);
+        if(t < 1) requestAnimationFrame(tick);
+      };
       requestAnimationFrame(tick);
     };
 
     const playOnceWhenVisible = (els) => {
-      const list = Array.from(els||[]);
+      const list = Array.from(els || []);
       if(!list.length) return;
-      if(!('IntersectionObserver' in window)){ list.forEach(el=>run(el,target(el))); return; }
-      const io = new IntersectionObserver((entries)=>{
-        entries.forEach(ent=>{ if(ent.isIntersecting){ run(ent.target,target(ent.target)); io.unobserve(ent.target); } });
-      }, { threshold:0.25 });
-      list.forEach(el=>io.observe(el));
+
+      if(!('IntersectionObserver' in window)){
+        list.forEach(el => run(el, target(el)));
+        return;
+      }
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(ent => {
+          if(ent.isIntersecting){
+            run(ent.target, target(ent.target));
+            io.unobserve(ent.target);
+          }
+        });
+      }, { threshold: 0.25 });
+
+      list.forEach(el => io.observe(el));
     };
 
-    const rerunTo = (el, next, dur=DURATION) => {
-      const to=Number(next||0), from=parse(el.textContent), s=performance.now();
-      const tick=(now)=>{ const t=Math.min(1,(now-s)/dur),c=from+(to-from)*ease(t); set(el,c); if(t<1)requestAnimationFrame(tick); };
+    const rerunTo = (el, next, dur = DURATION) => {
+      const to = Number(next || 0);
+      const from = parse(el.textContent);
+      const s = performance.now();
+
+      const tick = (now) => {
+        const t = Math.min(1, (now - s) / dur);
+        const c = from + (to - from) * ease(t);
+        set(el, c);
+        if(t < 1) requestAnimationFrame(tick);
+      };
+
       requestAnimationFrame(tick);
     };
 
@@ -678,219 +985,459 @@ document.addEventListener('DOMContentLoaded', function(){
 
   CountFX.playOnceWhenVisible(document.querySelectorAll('.js-count'));
 
-  /* ============================================================
-     AJAX
-  ============================================================ */
   const STATS_URL = @json(route('superadmin.dashboard.data'));
 
-  const fetchStats = async ({ tahun='', unit_id='' }={}) => {
+  const fetchStats = async ({ tahun = '', unit_id = '' } = {}) => {
     const url = new URL(STATS_URL, window.location.origin);
-    if(tahun)   url.searchParams.set('tahun', tahun);
+
+    if(tahun) url.searchParams.set('tahun', tahun);
     if(unit_id) url.searchParams.set('unit_id', unit_id);
-    const res = await fetch(url.toString(), { headers:{ 'Accept':'application/json' } });
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
     if(!res.ok) throw new Error('Gagal memuat data');
+
     return await res.json();
   };
 
-  /* ============================================================
-     POPOVER
-  ============================================================ */
-  const closePopovers = () => document.querySelectorAll('.u-popover.is-open').forEach(p=>{
-    p.classList.remove('is-open'); p.setAttribute('aria-hidden','true');
+  const closePopovers = () => {
+    document.querySelectorAll('.u-popover.is-open').forEach(p => {
+      p.classList.remove('is-open');
+      p.setAttribute('aria-hidden','true');
+    });
+  };
+
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.u-chart-head')) closePopovers();
   });
 
-  document.addEventListener('click', e=>{ if(!e.target.closest('.u-chart-head')) closePopovers(); });
+  document.querySelectorAll('.u-info-btn[data-pop]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  document.querySelectorAll('.u-info-btn[data-pop]').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      e.preventDefault(); e.stopPropagation();
       const pop = document.getElementById(btn.dataset.pop);
       if(!pop) return;
+
       const open = pop.classList.contains('is-open');
+
       closePopovers();
-      if(!open){ pop.classList.add('is-open'); pop.setAttribute('aria-hidden','false'); }
+
+      if(!open){
+        pop.classList.add('is-open');
+        pop.setAttribute('aria-hidden','false');
+      }
     });
   });
 
-  /* ============================================================
-     MODAL
-  ============================================================ */
-  const openModal  = id=>{ const m=document.getElementById(id); if(!m)return; m.classList.add('is-open'); m.setAttribute('aria-hidden','false'); document.body.classList.add('is-modal-open'); };
-  const closeModal = id=>{ const m=document.getElementById(id); if(!m)return; m.classList.remove('is-open'); m.setAttribute('aria-hidden','true'); document.body.classList.remove('is-modal-open'); };
+  const openModal = id => {
+    const m = document.getElementById(id);
+    if(!m) return;
 
-  document.querySelectorAll('[data-modal]').forEach(btn=>{
-    btn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); closePopovers(); openModal(btn.dataset.modal); });
+    m.classList.add('is-open');
+    m.setAttribute('aria-hidden','false');
+    document.body.classList.add('is-modal-open');
+  };
+
+  const closeModal = id => {
+    const m = document.getElementById(id);
+    if(!m) return;
+
+    m.classList.remove('is-open');
+    m.setAttribute('aria-hidden','true');
+    document.body.classList.remove('is-modal-open');
+  };
+
+  document.querySelectorAll('[data-modal]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      closePopovers();
+      openModal(btn.dataset.modal);
+    });
   });
-  document.querySelectorAll('[data-close]').forEach(el=>{
-    el.addEventListener('click', e=>{ e.preventDefault(); closeModal(el.dataset.close); });
+
+  document.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      closeModal(el.dataset.close);
+    });
   });
-  document.addEventListener('keydown', e=>{
-    if(e.key==='Escape'){
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){
       const open = document.querySelector('.u-modal.is-open');
       open ? closeModal(open.id) : closePopovers();
     }
   });
 
-  /* ============================================================
-     CHART HELPERS
-  ============================================================ */
   const splitLabel = v => {
     if(Array.isArray(v)) return v;
-    const s = String(v??'');
-    if(s.includes('\n')) return s.split('\n');
-    const p = s.trim().split(/\s+/);
-    return p.length===2 ? p : s;
-  };
-  const fmtInt = n => Number(n||0).toLocaleString('id-ID');
 
-  const buildDetail = (chart, opts={}) => {
+    const s = String(v ?? '');
+
+    if(s.includes('\n')) return s.split('\n');
+
+    const p = s.trim().split(/\s+/);
+
+    return p.length === 2 ? p : s;
+  };
+
+  const fmtInt = n => Number(n || 0).toLocaleString('id-ID');
+
+  const buildDetail = (chart, opts = {}) => {
     if(!chart) return { meta:'—', rows:[] };
-    const labels = chart.data.labels||[];
-    const data   = chart.data.datasets?.[0]?.data||[];
-    const colors = chart.data.datasets?.[0]?.backgroundColor||[];
-    const total  = data.reduce((a,b)=>a+(Number(b)||0),0)||0;
-    const rows = labels.map((name,i)=>{
-      const val=Number(data[i]||0), pct=total>0?Math.round(val/total*100):0;
-      return { name:String(name), val:`${fmtInt(val)} (${pct}%)`, color:Array.isArray(colors)?colors[i]||'#184f61':colors||'#184f61' };
+
+    const labels = chart.data.labels || [];
+    const data = chart.data.datasets?.[0]?.data || [];
+    const colors = chart.data.datasets?.[0]?.backgroundColor || [];
+    const total = data.reduce((a,b) => a + (Number(b) || 0), 0) || 0;
+
+    const rows = labels.map((name, i) => {
+      const val = Number(data[i] || 0);
+      const pct = total > 0 ? Math.round(val / total * 100) : 0;
+
+      return {
+        name: String(name),
+        val: `${fmtInt(val)} (${pct}%)`,
+        color: Array.isArray(colors) ? colors[i] || '#184f61' : colors || '#184f61'
+      };
     });
-    rows.sort((a,b)=>parseInt(b.val)||0 - parseInt(a.val)||0);
+
+    rows.sort((a,b) => {
+      const av = parseInt((a.val || '0').replace(/[^0-9]/g,''), 10) || 0;
+      const bv = parseInt((b.val || '0').replace(/[^0-9]/g,''), 10) || 0;
+      return bv - av;
+    });
+
     return {
-      meta: [`Tahun: ${opts.tahun||'Semua'}`, `Unit: ${opts.unitName||'Semua'}`, `Total: ${fmtInt(total)}`].join(' • '),
+      meta: [
+        `Tahun: ${opts.tahun || 'Semua'}`,
+        `Unit: ${opts.unitName || 'Semua'}`,
+        `Total: ${fmtInt(total)}`
+      ].join(' • '),
       rows
     };
   };
 
   const renderDetail = (detail, metaEl, listEl) => {
-    if(metaEl) metaEl.textContent = detail.meta||'—';
+    if(metaEl) metaEl.textContent = detail.meta || '—';
     if(!listEl) return;
+
     listEl.innerHTML = '';
-    detail.rows.forEach(r=>{
-      const row=document.createElement('div'); row.className='u-popover-row';
-      const left=document.createElement('div'); left.className='u-popover-left';
-      const dot=document.createElement('span'); dot.className='u-dot'; dot.style.background=r.color;
-      const nm=document.createElement('div'); nm.className='u-popover-name'; nm.textContent=r.name;
-      const vl=document.createElement('div'); vl.className='u-popover-val';  vl.textContent=r.val;
-      left.append(dot,nm); row.append(left,vl); listEl.append(row);
+
+    detail.rows.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'u-popover-row';
+
+      const left = document.createElement('div');
+      left.className = 'u-popover-left';
+
+      const dot = document.createElement('span');
+      dot.className = 'u-dot';
+      dot.style.background = r.color;
+
+      const nm = document.createElement('div');
+      nm.className = 'u-popover-name';
+      nm.textContent = r.name;
+
+      const vl = document.createElement('div');
+      vl.className = 'u-popover-val';
+      vl.textContent = r.val;
+
+      left.append(dot, nm);
+      row.append(left, vl);
+      listEl.append(row);
     });
   };
 
-  /* ============================================================
-     CHARTS INIT
-  ============================================================ */
   const donutColors = ['#0B4A5E','#111827','#F6C100','#D6A357'];
-  let donutChart=null, barChart=null;
+  let donutChart = null;
+  let barChart = null;
 
   const donutCtx = document.getElementById('donutStatus');
+
   if(donutCtx){
     donutChart = new Chart(donutCtx, {
-      type:'doughnut',
-      data:{ labels:@json($statusLabels), datasets:[{ data:@json($statusValues), backgroundColor:donutColors, borderWidth:0 }] },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        animation:{ duration:1800, easing:'easeOutQuart' },
-        layout:{ padding:{ right:70 } },
-        plugins:{ legend:{ position:'right', labels:{ boxWidth:10,boxHeight:10,padding:12,font:{family:'Nunito',weight:'400',size:14} } }, tooltip:{enabled:true} },
-        cutout:'55%'
+      type: 'doughnut',
+      data: {
+        labels: @json($statusLabels),
+        datasets: [{
+          data: @json($statusValues),
+          backgroundColor: donutColors,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 1800,
+          easing: 'easeOutQuart'
+        },
+        layout: {
+          padding: {
+            right: 70
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              padding: 12,
+              font: {
+                family: 'Nunito',
+                weight: '400',
+                size: 14
+              }
+            }
+          },
+          tooltip: {
+            enabled: true
+          }
+        },
+        cutout: '55%'
       }
     });
   }
 
   const barCtx = document.getElementById('barStatus');
+
   if(barCtx){
     barChart = new Chart(barCtx, {
-      type:'bar',
-      data:{ labels:@json($barLabels), datasets:[{ label:'Semua', data:@json($barValues), backgroundColor:'#F6C100', borderWidth:0, borderRadius:6 }] },
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        animation:{ duration:1800, easing:'easeOutQuart' },
-        plugins:{ legend:{ position:'bottom', labels:{font:{family:'Nunito',weight:'400',size:14}} }, tooltip:{enabled:true} },
-        scales:{
-          y:{ beginAtZero:true, ticks:{ stepSize:20, precision:0, font:{family:'Nunito',weight:'400',size:14} } },
-          x:{ ticks:{ maxRotation:0,minRotation:0,autoSkip:false,padding:6,font:{family:'Nunito',weight:'400',size:11},
-              callback:function(v){ return splitLabel(this.getLabelForValue(v)); } }, grid:{display:false} }
+      type: 'bar',
+      data: {
+        labels: @json($barLabels),
+        datasets: [{
+          label: 'Semua',
+          data: @json($barValues),
+          backgroundColor: '#F6C100',
+          borderWidth: 0,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 1800,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: {
+                family: 'Nunito',
+                weight: '400',
+                size: 14
+              }
+            }
+          },
+          tooltip: {
+            enabled: true
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 20,
+              precision: 0,
+              font: {
+                family: 'Nunito',
+                weight: '400',
+                size: 14
+              }
+            }
+          },
+          x: {
+            ticks: {
+              maxRotation: 0,
+              minRotation: 0,
+              autoSkip: false,
+              padding: 6,
+              font: {
+                family: 'Nunito',
+                weight: '400',
+                size: 11
+              },
+              callback: function(v){
+                return splitLabel(this.getLabelForValue(v));
+              }
+            },
+            grid: {
+              display: false
+            }
+          }
         }
       }
     });
   }
 
-  /* ============================================================
-     FILTER CHARTS
-  ============================================================ */
-  const getSelText = el => el?.options[el.selectedIndex]?.textContent||'';
+  const getSelText = el => el?.options[el.selectedIndex]?.textContent || '';
 
-  const metaDonut=document.getElementById('metaDonut'), listDonut=document.getElementById('listDonut');
-  const metaBar  =document.getElementById('metaBar'),   listBar  =document.getElementById('listBar');
+  const metaDonut = document.getElementById('metaDonut');
+  const listDonut = document.getElementById('listDonut');
+  const metaBar = document.getElementById('metaBar');
+  const listBar = document.getElementById('listBar');
 
-  const refreshDonutDetail = ()=>renderDetail(buildDetail(donutChart,{ tahun:document.getElementById('fTahun1')?.value||'', unitName:getSelText(document.getElementById('fUnit1')) }), metaDonut, listDonut);
-  const refreshBarDetail   = ()=>renderDetail(buildDetail(barChart,  { tahun:document.getElementById('fTahun2')?.value||'', unitName:getSelText(document.getElementById('fUnit2')) }), metaBar,   listBar);
+  const refreshDonutDetail = () => renderDetail(
+    buildDetail(donutChart, {
+      tahun: document.getElementById('fTahun1')?.value || '',
+      unitName: getSelText(document.getElementById('fUnit1'))
+    }),
+    metaDonut,
+    listDonut
+  );
 
-  refreshDonutDetail(); refreshBarDetail();
+  const refreshBarDetail = () => renderDetail(
+    buildDetail(barChart, {
+      tahun: document.getElementById('fTahun2')?.value || '',
+      unitName: getSelText(document.getElementById('fUnit2'))
+    }),
+    metaBar,
+    listBar
+  );
 
-  const applyDonutFilter = async()=>{
+  refreshDonutDetail();
+  refreshBarDetail();
+
+  const applyDonutFilter = async () => {
     if(!donutChart) return;
+
     try{
-      const s=await fetchStats({ tahun:document.getElementById('fTahun1')?.value||'', unit_id:document.getElementById('fUnit1')?.value||'' });
-      donutChart.data.labels=s.status?.labels||donutChart.data.labels;
-      donutChart.data.datasets[0].data=s.status?.values||donutChart.data.datasets[0].data;
-      donutChart.update(); refreshDonutDetail();
+      const s = await fetchStats({
+        tahun: document.getElementById('fTahun1')?.value || '',
+        unit_id: document.getElementById('fUnit1')?.value || ''
+      });
+
+      donutChart.data.labels = s.status?.labels || donutChart.data.labels;
+      donutChart.data.datasets[0].data = s.status?.values || donutChart.data.datasets[0].data;
+      donutChart.update();
+
+      refreshDonutDetail();
     }catch(e){}
   };
 
-  const applyBarFilter = async()=>{
+  const applyBarFilter = async () => {
     if(!barChart) return;
-    const tahun=document.getElementById('fTahun2')?.value||'';
+
+    const tahun = document.getElementById('fTahun2')?.value || '';
+
     try{
-      const s=await fetchStats({ tahun, unit_id:document.getElementById('fUnit2')?.value||'' });
-      barChart.data.labels=s.metode?.labels||barChart.data.labels;
-      barChart.data.datasets[0].data=s.metode?.values||barChart.data.datasets[0].data;
-      barChart.data.datasets[0].label=tahun||'Semua';
-      barChart.update(); refreshBarDetail();
+      const s = await fetchStats({
+        tahun,
+        unit_id: document.getElementById('fUnit2')?.value || ''
+      });
+
+      barChart.data.labels = s.metode?.labels || barChart.data.labels;
+      barChart.data.datasets[0].data = s.metode?.values || barChart.data.datasets[0].data;
+      barChart.data.datasets[0].label = tahun || 'Semua';
+      barChart.update();
+
+      refreshBarDetail();
     }catch(e){}
   };
 
-  ['fTahun1','fUnit1'].forEach(id=>document.getElementById(id)?.addEventListener('change',applyDonutFilter));
-  ['fTahun2','fUnit2'].forEach(id=>document.getElementById(id)?.addEventListener('change',applyBarFilter));
-
-  /* ============================================================
-     FILTER KARTU PAKET + NILAI
-  ============================================================ */
-  const elPaket=document.getElementById('valPaket'), elNilai=document.getElementById('valNilai');
-  const basePaket=Number(elPaket?.dataset.count||0), baseNilai=Number(elNilai?.dataset.count||0);
-
-  const setIfDiff=(el,n)=>{
-    if(!el) return false;
-    const cur=Number(String(el.dataset.count||'').replace(/[^\d.-]/g,'')||0);
-    if(cur===Number(n||0)) return false;
-    el.dataset.count=String(n||0); return true;
-  };
-
-  const applyPaketFilter = async()=>{
-    const tahun=document.getElementById('fTahunPaket')?.value||'';
-    const unit_id=document.getElementById('fUnitPaket')?.value||'';
-    if(!elPaket) return;
-    if(!tahun&&!unit_id){ if(setIfDiff(elPaket,basePaket)) CountFX.rerunTo(elPaket,basePaket); return; }
-    try{ const s=await fetchStats({tahun,unit_id}); const n=Number(s?.paket?.count||0); if(setIfDiff(elPaket,n)) CountFX.rerunTo(elPaket,n); }catch(e){}
-  };
-
-  const applyNilaiFilter = async()=>{
-    const tahun=document.getElementById('fTahunNilai')?.value||'';
-    const unit_id=document.getElementById('fUnitNilai')?.value||'';
-    if(!elNilai) return;
-    if(!tahun&&!unit_id){ if(setIfDiff(elNilai,baseNilai)) CountFX.rerunTo(elNilai,baseNilai); return; }
-    try{ const s=await fetchStats({tahun,unit_id}); const n=Number(s?.nilai?.sum||0); if(setIfDiff(elNilai,n)) CountFX.rerunTo(elNilai,n); }
-    catch(e){ if(setIfDiff(elNilai,baseNilai)) CountFX.rerunTo(elNilai,baseNilai); }
-  };
-
-  ['fTahunPaket','fUnitPaket'].forEach(id=>document.getElementById(id)?.addEventListener('change',applyPaketFilter));
-  ['fTahunNilai','fUnitNilai'].forEach(id=>document.getElementById(id)?.addEventListener('change',applyNilaiFilter));
-
-  /* refresh popover saat dibuka */
-  const popObs = new MutationObserver(()=>{
-    if(document.getElementById('popDonut')?.classList.contains('is-open')) refreshDonutDetail();
-    if(document.getElementById('popBar')?.classList.contains('is-open'))   refreshBarDetail();
+  ['fTahun1','fUnit1'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', applyDonutFilter);
   });
-  ['popDonut','popBar'].forEach(id=>{ const el=document.getElementById(id); if(el) popObs.observe(el,{attributes:true,attributeFilter:['class']}); });
+
+  ['fTahun2','fUnit2'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', applyBarFilter);
+  });
+
+  const elPaket = document.getElementById('valPaket');
+  const elNilai = document.getElementById('valNilai');
+
+  const basePaket = Number(elPaket?.dataset.count || 0);
+  const baseNilai = Number(elNilai?.dataset.count || 0);
+
+  const setIfDiff = (el, n) => {
+    if(!el) return false;
+
+    const cur = Number(String(el.dataset.count || '').replace(/[^\d.-]/g,'') || 0);
+
+    if(cur === Number(n || 0)) return false;
+
+    el.dataset.count = String(n || 0);
+
+    return true;
+  };
+
+  const applyPaketFilter = async () => {
+    const tahun = document.getElementById('fTahunPaket')?.value || '';
+    const unit_id = document.getElementById('fUnitPaket')?.value || '';
+
+    if(!elPaket) return;
+
+    if(!tahun && !unit_id){
+      if(setIfDiff(elPaket, basePaket)) CountFX.rerunTo(elPaket, basePaket);
+      return;
+    }
+
+    try{
+      const s = await fetchStats({ tahun, unit_id });
+      const n = Number(s?.paket?.count || 0);
+
+      if(setIfDiff(elPaket, n)) CountFX.rerunTo(elPaket, n);
+    }catch(e){}
+  };
+
+  const applyNilaiFilter = async () => {
+    const tahun = document.getElementById('fTahunNilai')?.value || '';
+    const unit_id = document.getElementById('fUnitNilai')?.value || '';
+
+    if(!elNilai) return;
+
+    if(!tahun && !unit_id){
+      if(setIfDiff(elNilai, baseNilai)) CountFX.rerunTo(elNilai, baseNilai);
+      return;
+    }
+
+    try{
+      const s = await fetchStats({ tahun, unit_id });
+      const n = Number(s?.nilai?.sum || 0);
+
+      if(setIfDiff(elNilai, n)) CountFX.rerunTo(elNilai, n);
+    }
+    catch(e){
+      if(setIfDiff(elNilai, baseNilai)) CountFX.rerunTo(elNilai, baseNilai);
+    }
+  };
+
+  ['fTahunPaket','fUnitPaket'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', applyPaketFilter);
+  });
+
+  ['fTahunNilai','fUnitNilai'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', applyNilaiFilter);
+  });
+
+  const popObs = new MutationObserver(() => {
+    if(document.getElementById('popDonut')?.classList.contains('is-open')) refreshDonutDetail();
+    if(document.getElementById('popBar')?.classList.contains('is-open')) refreshBarDetail();
+  });
+
+  ['popDonut','popBar'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) popObs.observe(el, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  });
 });
 </script>
+
+@include('Partials.chatbot')
+
 </body>
 </html>

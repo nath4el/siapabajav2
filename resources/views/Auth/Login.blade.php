@@ -94,7 +94,7 @@
         <button class="fg-btn" type="submit">Masuk</button>
 
         <a class="fg-back" href="{{ url('/') }}">
-          ‹ Kembali
+          Kembali
         </a>
       </form>
     </div>
