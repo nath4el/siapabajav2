@@ -4,9 +4,7 @@
 
 @section('content')
 @php
-    // role default ppk, bisa diganti via /login?role=unit
     $role = request('role', 'ppk');
-    // Cek apakah ada error dari session (dari redirect back)
     $hasError = session()->has('errors') || session('status') || request()->boolean('error');
 @endphp
 
@@ -40,6 +38,7 @@
 
         <input type="hidden" name="role" value="{{ $role }}">
 
+        {{-- EMAIL --}}
         <div class="fg">
           <label>Email</label>
           <input
@@ -56,6 +55,7 @@
           @enderror
         </div>
 
+        {{-- PASSWORD --}}
         <div class="fg">
           <label>Kata Sandi</label>
           <input
@@ -70,7 +70,7 @@
           @enderror
         </div>
 
-        {{-- CAPTCHA CENTER --}}
+        {{-- CAPTCHA --}}
         <div class="fg" style="margin-top:20px;">
           <label style="display:block; text-align:center; margin-bottom:10px;">
             Verifikasi Keamanan
@@ -84,13 +84,12 @@
 
           @error('g-recaptcha-response')
             <div style="text-align:center; margin-top:8px;">
-              <span class="error-text">
-                {{ $message }}
-              </span>
+              <span class="error-text">{{ $message }}</span>
             </div>
           @enderror
         </div>
 
+        {{-- BUTTON --}}
         <button class="fg-btn" type="submit">Masuk</button>
 
         <a class="fg-back" href="{{ url('/') }}">
@@ -100,4 +99,8 @@
     </div>
   </div>
 </section>
+
+{{-- ✅ WAJIB: SCRIPT RECAPTC"HA --}}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
 @endsection

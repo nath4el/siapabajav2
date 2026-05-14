@@ -14,14 +14,35 @@ class Unit extends Model
 
     protected $fillable = [
         'nama',
+        'is_active',
     ];
 
-    /**
-     * ✅ Satu Unit punya banyak Pengadaan.
-     * FK: pengadaans.unit_id -> units.id
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    */
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relasi ke Pengadaan
+    |--------------------------------------------------------------------------
+    */
     public function pengadaans()
     {
         return $this->hasMany(Pengadaan::class, 'unit_id', 'id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relasi ke User
+    |--------------------------------------------------------------------------
+    */
+    public function users()
+    {
+        return $this->hasMany(User::class, 'unit_id', 'id');
     }
 }

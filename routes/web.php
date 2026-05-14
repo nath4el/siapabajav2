@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Http;
 
 // Controllers
@@ -15,6 +16,7 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 | Public / Guest Routes
 |--------------------------------------------------------------------------
 */
+
 Route::view('/', 'Landing.Index')->name('landing');
 
 // Login (GET form)
@@ -53,17 +55,29 @@ Route::post('/login', function (Request $request) {
     $credentials = $request->only('email', 'password');
 
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
+
         $request->session()->regenerate();
+
+        $user = Auth::user();
+
+        // 🔥 TAMBAHAN: CEK STATUS USER
+        if ($user->status !== 'active') {
+            Auth::logout();
+
+            return back()->withErrors([
+                'email' => 'Akun Anda tidak aktif. Hubungi Super Admin.'
+            ]);
+        }
+
         return redirect()->route('home');
     }
 
     return back()
         ->withErrors(['email' => 'Email atau kata sandi salah.'])
         ->withInput($request->only('email'));
-
 })->name('login.post');
 
-// Logout (POST)
+// Logout
 Route::post('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
@@ -71,7 +85,6 @@ Route::post('/logout', function (Request $request) {
     return redirect()->route('landing');
 })->name('logout');
 
-// Logout (GET fallback)
 Route::get('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
@@ -79,27 +92,23 @@ Route::get('/logout', function (Request $request) {
     return redirect()->route('landing');
 })->name('logout.get');
 
-// Homepage & Preview
+// Homepage
 Route::view('/home', 'Home.index')->name('home');
 Route::view('/home-preview', 'Home.index')->name('home.preview');
 
-// Arsip Publik (Landing)
+// Arsip
 Route::view('/ArsipPBJ', 'Landing.pbj')->name('ArsipPBJ');
 Route::redirect('/landing/ArsipPBJ', '/ArsipPBJ')->name('landing.pbj');
 
-// Arsip Publik (Home)
 Route::view('/home/ArsipPBJ', 'Home.pbj')->name('home.pbj');
 
-// Redirect alias lama
 Route::redirect('/home/arsippbj', '/home/ArsipPBJ')->name('home.arsippbj');
 Route::redirect('/home/arsip-pbj', '/home/ArsipPBJ');
 
-// Detail arsip publik
 Route::get('/arsip/{id}', function ($id) {
     return view('Landing.LihatDetail', compact('id'));
 })->name('arsip.detail');
 
-// File viewer
 Route::get('/file-viewer', [UnitController::class, 'fileViewer'])
     ->name('file.viewer');
 
@@ -115,9 +124,16 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::get('/home/dashboard', function () {
-        $role = strtolower(trim((string) (auth()->user()->role ?? '')));
 
-        if (in_array($role, ['super admin', 'superadmin', 'super_admin'], true)) {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        $role = strtolower(trim((string) $user->role));
+
+        if ($role === 'super_admin') {
             return redirect()->route('superadmin.dashboard');
         }
 
@@ -134,63 +150,35 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | UNIT ROUTES
+    | UNIT
     |--------------------------------------------------------------------------
     */
     Route::prefix('unit')->name('unit.')->group(function () {
+        Route::get('/dashboard', [UnitController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard/stats', [UnitController::class, 'dashboardStats'])->name('dashboard.stats');
+        Route::get('/dashboard/data', [UnitController::class, 'dashboardStats'])->name('dashboard.data');
 
-        Route::get('/dashboard', [UnitController::class, 'dashboard'])
-            ->name('dashboard');
+        Route::get('/arsip', [UnitController::class, 'arsipIndex'])->name('arsip');
+        Route::get('/arsippbj', [UnitController::class, 'arsipIndex'])->name('arsippbj');
+        Route::get('/arsip-pbj', [UnitController::class, 'arsipIndex'])->name('arsip.pbj');
 
-        Route::get('/dashboard/stats', [UnitController::class, 'dashboardStats'])
-            ->name('dashboard.stats');
+        Route::get('/arsip/export', [UnitController::class, 'arsipExport'])->name('arsip.export');
 
-        Route::get('/dashboard/data', [UnitController::class, 'dashboardStats'])
-            ->name('dashboard.data');
+        Route::get(
+            '/histori-aktivitas',
+            [UnitController::class, 'historiAktivitas']
+        )->name('histori');
 
-        Route::get('/arsip', [UnitController::class, 'arsipIndex'])
-            ->name('arsip');
 
-        // alias
-        Route::get('/arsippbj', [UnitController::class, 'arsipIndex'])
-            ->name('arsippbj');
+        Route::get('/arsip/{id}/edit', [UnitController::class, 'arsipEdit'])->name('arsip.edit');
+        Route::put('/arsip/{id}', [UnitController::class, 'arsipUpdate'])->name('arsip.update');
 
-        Route::get('/arsip-pbj', [UnitController::class, 'arsipIndex'])
-            ->name('arsip.pbj');
+        Route::delete('/arsip', [UnitController::class, 'arsipBulkDestroy'])->name('arsip.bulkDestroy');
+        Route::delete('/arsip/{id}', [UnitController::class, 'arsipDestroy'])->name('arsip.destroy');
 
-        /**
-         * ✅✅ EXPORT ARSIP UNIT (CSV)
-         * Penting: taruh sebelum route dinamis /arsip/{id}/...
-         * URL contoh: /unit/arsip/export?status=Publik&tahun=2025&q=...
-         */
-        Route::get('/arsip/export', [UnitController::class, 'arsipExport'])
-            ->name('arsip.export');
+        Route::get('/pengadaan/tambah', [UnitController::class, 'pengadaanCreate'])->name('pengadaan.create');
+        Route::post('/pengadaan/store', [UnitController::class, 'pengadaanStore'])->name('pengadaan.store');
 
-        // ✅ EDIT + UPDATE
-        Route::get('/arsip/{id}/edit', [UnitController::class, 'arsipEdit'])
-            ->name('arsip.edit');
-
-        Route::put('/arsip/{id}', [UnitController::class, 'arsipUpdate'])
-            ->name('arsip.update');
-
-        // ✅ DELETE (bulk + single)
-        Route::delete('/arsip', [UnitController::class, 'arsipBulkDestroy'])
-            ->name('arsip.bulkDestroy');
-
-        Route::delete('/arsip/{id}', [UnitController::class, 'arsipDestroy'])
-            ->name('arsip.destroy');
-
-        // ✅ CREATE
-        Route::get('/pengadaan/tambah', [UnitController::class, 'pengadaanCreate'])
-            ->name('pengadaan.create');
-
-        Route::post('/pengadaan/store', [UnitController::class, 'pengadaanStore'])
-            ->name('pengadaan.store');
-
-        /**
-         * ✅ LIHAT dokumen (INLINE)
-         * showDokumen -> redirect ke route('file.viewer', ['file' => '/storage/...'])
-         */
         Route::get('/arsip/{id}/dokumen/{field}/{file}', [UnitController::class, 'showDokumen'])
             ->where(['field' => '[A-Za-z0-9_\-]+', 'file' => '.+'])
             ->name('arsip.dokumen.show');
@@ -201,18 +189,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/arsip/{id}/dokumen-download', [UnitController::class, 'downloadDokumen'])
             ->name('arsip.dokumen.download');
 
-        // ✅ AKUN
-        Route::get('/kelola-akun', [UnitController::class, 'kelolaAkun'])
-            ->name('kelola.akun');
-
-        Route::put('/akun', [UnitController::class, 'updateAkun'])
-            ->name('akun.update');
+        Route::get('/kelola-akun', [UnitController::class, 'kelolaAkun'])->name('kelola.akun');
+        Route::put('/akun', [UnitController::class, 'updateAkun'])->name('akun.update');
     });
-
 
     /*
     |--------------------------------------------------------------------------
-    | PPK ROUTES
+    | PPK
     |--------------------------------------------------------------------------
     */
     Route::prefix('ppk')
@@ -220,122 +203,109 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:ppk')
         ->group(function () {
 
-            Route::get('/dashboard', [PpkController::class, 'dashboard'])
-                ->name('dashboard');
+            Route::get('/dashboard', [PpkController::class, 'dashboard'])->name('dashboard');
+            Route::get('/dashboard/data', [PpkController::class, 'dashboardData'])->name('dashboard.data');
 
-            Route::get('/dashboard/data', [PpkController::class, 'dashboardData'])
-                ->name('dashboard.data');
+            Route::get('/arsip', [PpkController::class, 'arsipIndex'])->name('arsip');
 
-            Route::get('/arsip', [PpkController::class, 'arsipIndex'])
-                ->name('arsip');
+            Route::get('/arsip/{id}/edit', [PpkController::class, 'arsipEdit'])->name('arsip.edit');
+            Route::put('/arsip/{id}', [PpkController::class, 'arsipUpdate'])->name('arsip.update');
 
-            Route::get('/arsip/{id}/edit', [PpkController::class, 'arsipEdit'])
-                ->name('arsip.edit');
+            Route::delete('/arsip/{id}/delete', [PpkController::class, 'arsipDelete'])->name('arsip.delete');
 
-            Route::put('/arsip/{id}', [PpkController::class, 'arsipUpdate'])
-                ->name('arsip.update');
-
-            Route::delete('/arsip/{id}/delete', [PpkController::class, 'arsipDelete'])
-                ->name('arsip.delete');
-
-            Route::get('/pengadaan/tambah', [PpkController::class, 'pengadaanCreate'])
-                ->name('pengadaan.create');
-
-            Route::post('/pengadaan/store', [PpkController::class, 'pengadaanStore'])
-                ->name('pengadaan.store');
+            Route::get('/pengadaan/tambah', [PpkController::class, 'pengadaanCreate'])->name('pengadaan.create');
+            Route::post('/pengadaan/store', [PpkController::class, 'pengadaanStore'])->name('pengadaan.store');
 
             Route::get('/arsip/{id}/dokumen/{field}/{file}', [PpkController::class, 'showDokumen'])
                 ->where(['field' => '[A-Za-z0-9_\-]+', 'file' => '.+'])
                 ->name('arsip.dokumen.show');
 
-            Route::get('/kelola-akun', [PpkController::class, 'kelolaAkun'])
-                ->name('kelola.akun');
+            Route::get('/kelola-akun', [PpkController::class, 'kelolaAkun'])->name('kelola.akun');
+            Route::put('/akun', [PpkController::class, 'updateAkun'])->name('akun.update');
 
-            Route::put('/akun', [PpkController::class, 'updateAkun'])
-                ->name('akun.update');
-            
-            Route::get('/histori', [PpkController::class, 'histori'])
-                ->name('histori');
+            Route::get('/histori', [PpkController::class, 'histori'])->name('histori');
         });
 
     /*
     |--------------------------------------------------------------------------
-    | SUPER ADMIN ROUTES
+    | SUPER ADMIN (FIXED ONLY)
     |--------------------------------------------------------------------------
     */
     Route::prefix('super-admin')
-    ->name('superadmin.')
-    ->middleware('role:super admin')
-    ->group(function () {
+        ->name('superadmin.')
+        ->middleware('role:super_admin') // ✅ FIX
+        ->group(function () {
 
-        Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])
-            ->name('dashboard');
+            Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
+            Route::get('/dashboard/data', [SuperAdminController::class, 'dashboardData'])->name('dashboard.data');
 
-        Route::get('/dashboard/data', [SuperAdminController::class, 'dashboardData'])
-            ->name('dashboard.data');
+            Route::get('/arsip', [SuperAdminController::class, 'arsipIndex'])->name('arsip');
 
-        Route::get('/arsip', [SuperAdminController::class, 'arsipIndex'])
-            ->name('arsip');
+            Route::get('/arsip/{id}/edit', [SuperAdminController::class, 'arsipEdit'])->name('arsip.edit');
+            Route::put('/arsip/{id}', [SuperAdminController::class, 'arsipUpdate'])->name('arsip.update');
 
-        Route::get('/arsip/{id}/edit', [SuperAdminController::class, 'arsipEdit'])
-            ->name('arsip.edit');
+            Route::delete('/arsip/{id}/delete', [SuperAdminController::class, 'arsipDelete'])->name('arsip.delete');
 
-        Route::put('/arsip/{id}', [SuperAdminController::class, 'arsipUpdate'])
-            ->name('arsip.update');
+            Route::get('/pengadaan/tambah', [SuperAdminController::class, 'pengadaanCreate'])->name('pengadaan.create');
+            Route::post('/pengadaan/store', [SuperAdminController::class, 'pengadaanStore'])->name('pengadaan.store');
 
-        Route::delete('/arsip/{id}/delete', [SuperAdminController::class, 'arsipDelete'])
-            ->name('arsip.delete');
+            Route::get('/arsip/{id}/dokumen/{field}/{file}', [SuperAdminController::class, 'showDokumen'])
+                ->where(['field' => '[A-Za-z0-9_\-]+', 'file' => '.+'])
+                ->name('arsip.dokumen.show');
 
-        Route::get('/pengadaan/tambah', [SuperAdminController::class, 'pengadaanCreate'])
-            ->name('pengadaan.create');
+            /*
+|--------------------------------------------------------------------------
+| KELOLA MENU
+|--------------------------------------------------------------------------
+*/
 
-        Route::post('/pengadaan/store', [SuperAdminController::class, 'pengadaanStore'])
-            ->name('pengadaan.store');
+            Route::get(
+                '/kelola-menu',
+                [SuperAdminController::class, 'kelolaMenu']
+            )->name('kelola.menu');
 
-        Route::get('/arsip/{id}/dokumen/{field}/{file}', [SuperAdminController::class, 'showDokumen'])
-            ->where(['field' => '[A-Za-z0-9_\-]+', 'file' => '.+'])
-            ->name('arsip.dokumen.show');
+            /*
+|--------------------------------------------------------------------------
+| CRUD MASTER MENU
+|--------------------------------------------------------------------------
+*/
 
-        Route::get('/kelola-menu', [SuperAdminController::class, 'kelolaMenu'])
-            ->name('kelola.menu');
+            Route::post(
+                '/kelola-menu/{type}',
+                [SuperAdminController::class, 'storeMenu']
+            )->name('kelola.menu.store');
 
-        // =========================
-        // KELOLA AKUN
-        // =========================
-        Route::get('/kelola-akun', [SuperAdminController::class, 'kelolaAkun'])
-            ->name('kelola.akun');
+            Route::put(
+                '/kelola-menu/{type}/{id}',
+                [SuperAdminController::class, 'updateMenu']
+            )->name('kelola.menu.update');
 
-        Route::get('/kelola-akun/ppk', [SuperAdminController::class, 'kelolaAkunPpk'])
-            ->name('kelola.akun.ppk');
+            Route::delete(
+                '/kelola-menu/{type}/{id}',
+                [SuperAdminController::class, 'destroyMenu']
+            )->name('kelola.menu.destroy');
 
-        Route::get('/kelola-akun/unit', [SuperAdminController::class, 'kelolaAkunUnit'])
-            ->name('kelola.akun.unit');
+            Route::patch(
+                '/kelola-menu/{type}/{id}/toggle',
+                [SuperAdminController::class, 'toggleMenuStatus']
+            )->name('kelola.menu.toggle');
 
-        Route::put('/akun', [SuperAdminController::class, 'updateAkun'])
-            ->name('akun.update');
-        
-        Route::get('/kelola-akun/ppk', [SuperAdminController::class, 'kelolaAkunPpk'])
-            ->name('kelola.akun.ppk');
+            Route::get('/kelola-akun', [SuperAdminController::class, 'kelolaAkun'])->name('kelola.akun');
+            Route::put('/kelola-akun', [SuperAdminController::class, 'updateAkun'])
+                ->name('akun.update');
 
-        Route::post('/kelola-akun/ppk', [SuperAdminController::class, 'storePpk'])
-            ->name('kelola.akun.ppk.store');
+            Route::get('/kelola-akun/ppk', [SuperAdminController::class, 'kelolaAkunPpk'])->name('kelola.akun.ppk');
+            Route::post('/kelola-akun/ppk', [SuperAdminController::class, 'storePpk'])->name('kelola.akun.ppk.store');
+            Route::put('/kelola-akun/ppk/{id}', [SuperAdminController::class, 'updatePpk'])->name('kelola.akun.ppk.update');
+            Route::delete('/kelola-akun/ppk/{id}', [SuperAdminController::class, 'destroyPpk'])->name('kelola.akun.ppk.destroy');
 
-        Route::put('/kelola-akun/ppk/{id}', [SuperAdminController::class, 'updatePpk'])
-            ->name('kelola.akun.ppk.update');
-
-        Route::delete('/kelola-akun/ppk/{id}', [SuperAdminController::class, 'destroyPpk'])
-            ->name('kelola.akun.ppk.destroy');
-
-        Route::get('/kelola-akun/unit', [SuperAdminController::class, 'kelolaAkunUnit'])
-            ->name('kelola.akun.unit');
-
-        Route::post('/kelola-akun/unit', [SuperAdminController::class, 'storeUnit'])
-            ->name('kelola.akun.unit.store');
-
-        Route::put('/kelola-akun/unit/{id}', [SuperAdminController::class, 'updateUnit'])
-            ->name('kelola.akun.unit.update');
-
-        Route::delete('/kelola-akun/unit/{id}', [SuperAdminController::class, 'destroyUnit'])
-            ->name('kelola.akun.unit.destroy');
-    });
+            Route::get('/kelola-akun/unit', [SuperAdminController::class, 'kelolaAkunUnit'])->name('kelola.akun.unit');
+            Route::post('/kelola-akun/unit', [SuperAdminController::class, 'storeUnit'])->name('kelola.akun.unit.store');
+            Route::put('/kelola-akun/unit/{id}', [SuperAdminController::class, 'updateUnit'])->name('kelola.akun.unit.update');
+            Route::delete('/kelola-akun/unit/{id}', [SuperAdminController::class, 'destroyUnit'])->name('kelola.akun.unit.destroy');
+            Route::patch(
+                '/kelola-menu/{type}/{id}/toggle',
+                [SuperAdminController::class, 'toggleMenuStatus']
+            )->name('kelola.menu.toggle');
+        });
 });
