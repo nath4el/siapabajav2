@@ -27,50 +27,124 @@ class UnitController extends Controller
             abort(403, 'Akun unit belum terhubung ke unit_id.');
         }
 
-        $tahunOptions = Pengadaan::where('unit_id', $unitId)
-            ->whereNotNull('tahun')
-            ->select('tahun')
-            ->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun')
-            ->map(fn($t) => (int)$t)
+        /*
+    |--------------------------------------------------------------------------
+    | DROPDOWN DARI MASTER MENU
+    |--------------------------------------------------------------------------
+    */
+
+        $tahunOptions = MasterMenu::where('category', 'tahun')
+            ->where('is_active', true)
+            ->orderByDesc('nama')
+            ->pluck('nama')
             ->values()
             ->all();
 
-        if (count($tahunOptions) === 0) {
-            $y = (int)date('Y');
-            $tahunOptions = [$y, $y - 1, $y - 2, $y - 3, $y - 4];
-        }
+        $statusLabels = MasterMenu::where('category', 'status_pekerjaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
 
-        $defaultYear = $tahunOptions[0] ?? (int)date('Y');
+        $barLabels = MasterMenu::where('category', 'metode_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->map(function ($item) {
+                return str_replace(' ', "\n", $item);
+            })
+            ->values()
+            ->all();
+
+        /*
+    |--------------------------------------------------------------------------
+    | DEFAULT YEAR
+    |--------------------------------------------------------------------------
+    */
+
+        $defaultYear = $tahunOptions[0] ?? date('Y');
+
+        /*
+    |--------------------------------------------------------------------------
+    | SUMMARY
+    |--------------------------------------------------------------------------
+    */
 
         $totalArsip = Pengadaan::where('unit_id', $unitId)->count();
-        $publik     = Pengadaan::where('unit_id', $unitId)->where('status_arsip', 'Publik')->count();
-        $privat     = Pengadaan::where('unit_id', $unitId)->where('status_arsip', 'Privat')->count();
 
-        $paketYear  = Pengadaan::where('unit_id', $unitId)->where('tahun', $defaultYear)->count();
-        $nilaiYear  = (int) Pengadaan::where('unit_id', $unitId)->where('tahun', $defaultYear)->sum('nilai_kontrak');
+        $publik = Pengadaan::where('unit_id', $unitId)
+            ->where('status_arsip', 'Publik')
+            ->count();
+
+        $privat = Pengadaan::where('unit_id', $unitId)
+            ->where('status_arsip', 'Privat')
+            ->count();
+
+        $paketYear = Pengadaan::where('unit_id', $unitId)
+            ->where('tahun', $defaultYear)
+            ->count();
+
+        $nilaiYear = (int) Pengadaan::where('unit_id', $unitId)
+            ->where('tahun', $defaultYear)
+            ->sum('nilai_kontrak');
 
         $summary = [
-            ["label" => "Total Arsip",            "value" => $totalArsip,                          "accent" => "navy",   "icon" => "bi-file-earmark-text"],
-            ["label" => "Arsip Publik",            "value" => $publik,                              "accent" => "yellow", "icon" => "bi-eye"],
-            ["label" => "Arsip Private",           "value" => $privat,                              "accent" => "gray",   "icon" => "bi-eye-slash"],
-            ["label" => "Total Arsip Pengadaan",   "value" => $paketYear,                           "accent" => "navy",   "icon" => "bi-file-earmark-text", "sub" => "Paket Pengadaan Barang dan Jasa"],
-            ["label" => "Total Nilai Pengadaan",   "value" => $this->formatRupiahNumber($nilaiYear), "accent" => "yellow", "icon" => "bi-buildings",         "sub" => "Nilai Kontrak Pengadaan"],
+            [
+                "label" => "Total Arsip",
+                "value" => $totalArsip,
+                "accent" => "navy",
+                "icon" => "bi-file-earmark-text"
+            ],
+
+            [
+                "label" => "Arsip Publik",
+                "value" => $publik,
+                "accent" => "yellow",
+                "icon" => "bi-eye"
+            ],
+
+            [
+                "label" => "Arsip Private",
+                "value" => $privat,
+                "accent" => "gray",
+                "icon" => "bi-eye-slash"
+            ],
+
+            [
+                "label" => "Total Arsip Pengadaan",
+                "value" => $paketYear,
+                "accent" => "navy",
+                "icon" => "bi-file-earmark-text",
+                "sub" => "Paket Pengadaan Barang dan Jasa"
+            ],
+
+            [
+                "label" => "Total Nilai Pengadaan",
+                "value" => $this->formatRupiahNumber($nilaiYear),
+                "accent" => "yellow",
+                "icon" => "bi-buildings",
+                "sub" => "Nilai Kontrak Pengadaan"
+            ],
         ];
 
-        $statusLabels = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
-        $statusValues = $this->countByStatusPekerjaan($unitId, null, $statusLabels);
+        /*
+    |--------------------------------------------------------------------------
+    | CHART DATA
+    |--------------------------------------------------------------------------
+    */
 
-        $barLabels = [
-            "Pengadaan\nLangsung",
-            "Penunjukan\nLangsung",
-            "E-Purchasing /\nE-Catalog",
-            "Tender\nTerbatas",
-            "Tender\nTerbuka",
-            "Swakelola"
-        ];
-        $barValues = $this->countByMetodePengadaan($unitId, null, $barLabels);
+        $statusValues = $this->countByStatusPekerjaan(
+            $unitId,
+            null,
+            $statusLabels
+        );
+
+        $barValues = $this->countByMetodePengadaan(
+            $unitId,
+            null,
+            $barLabels
+        );
 
         return view('Unit.Dashboard', compact(
             'unitName',
@@ -87,40 +161,98 @@ class UnitController extends Controller
     public function dashboardStats(Request $request)
     {
         $unitId = auth()->user()->unit_id;
+
         if (!$unitId) {
-            return response()->json(['message' => 'Akun unit belum terhubung ke unit_id.'], 403);
+            return response()->json([
+                'message' => 'Akun unit belum terhubung ke unit_id.'
+            ], 403);
         }
 
         $tahun = $request->query('tahun');
-        $tahun = ($tahun === null || $tahun === '') ? null : (int)$tahun;
+        $tahun = ($tahun === null || $tahun === '')
+            ? null
+            : (int)$tahun;
+
+        /*
+    |--------------------------------------------------------------------------
+    | DROPDOWN DINAMIS
+    |--------------------------------------------------------------------------
+    */
+
+        $statusLabels = MasterMenu::where('category', 'status_pekerjaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+
+        $barLabels = MasterMenu::where('category', 'metode_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->map(function ($item) {
+                return str_replace(' ', "\n", $item);
+            })
+            ->values()
+            ->all();
+
+        /*
+    |--------------------------------------------------------------------------
+    | SUMMARY FILTER
+    |--------------------------------------------------------------------------
+    */
 
         $paket = Pengadaan::where('unit_id', $unitId)
-            ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
+            ->when($tahun !== null, function ($q) use ($tahun) {
+                $q->where('tahun', $tahun);
+            })
             ->count();
 
         $nilai = (int) Pengadaan::where('unit_id', $unitId)
-            ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
+            ->when($tahun !== null, function ($q) use ($tahun) {
+                $q->where('tahun', $tahun);
+            })
             ->sum('nilai_kontrak');
 
-        $statusLabels = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
-        $statusValues = $this->countByStatusPekerjaan($unitId, $tahun, $statusLabels);
+        /*
+    |--------------------------------------------------------------------------
+    | CHART FILTER
+    |--------------------------------------------------------------------------
+    */
 
-        $barLabels = [
-            "Pengadaan\nLangsung",
-            "Penunjukan\nLangsung",
-            "E-Purchasing /\nE-Catalog",
-            "Tender\nTerbatas",
-            "Tender\nTerbuka",
-            "Swakelola"
-        ];
-        $barValues = $this->countByMetodePengadaan($unitId, $tahun, $barLabels);
+        $statusValues = $this->countByStatusPekerjaan(
+            $unitId,
+            $tahun,
+            $statusLabels
+        );
+
+        $barValues = $this->countByMetodePengadaan(
+            $unitId,
+            $tahun,
+            $barLabels
+        );
 
         return response()->json([
-            'tahun'  => $tahun,
-            'paket'  => ['count' => $paket],
-            'nilai'  => ['sum' => $nilai, 'formatted' => $this->formatRupiahNumber($nilai)],
-            'status' => ['labels' => $statusLabels, 'values' => $statusValues],
-            'metode' => ['labels' => $barLabels,    'values' => $barValues],
+            'tahun' => $tahun,
+
+            'paket' => [
+                'count' => $paket
+            ],
+
+            'nilai' => [
+                'sum' => $nilai,
+                'formatted' => $this->formatRupiahNumber($nilai)
+            ],
+
+            'status' => [
+                'labels' => $statusLabels,
+                'values' => $statusValues
+            ],
+
+            'metode' => [
+                'labels' => $barLabels,
+                'values' => $barValues
+            ],
         ]);
     }
 
@@ -143,28 +275,33 @@ class UnitController extends Controller
 
     private function countByMetodePengadaan(int $unitId, ?int $tahun, array $labels): array
     {
-        $map = [
-            "Pengadaan\nLangsung"       => ["Pengadaan Langsung", "Pengadaan\nLangsung"],
-            "Penunjukan\nLangsung"      => ["Penunjukan Langsung", "Penunjukan\nLangsung"],
-            "E-Purchasing /\nE-Catalog" => ["E-Purchasing / E-Catalog", "E-Purchasing/E-Catalog", "E-Purchasing", "E-Catalog", "E-Catalogue"],
-            "Tender\nTerbatas"          => ["Tender Terbatas", "Tender\nTerbatas"],
-            "Tender\nTerbuka"           => ["Tender Terbuka", "Tender\nTerbuka", "Tender"],
-            "Swakelola"                 => ["Swakelola"],
-        ];
-
         $raw = Pengadaan::where('unit_id', $unitId)
             ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
-            ->select('jenis_pengadaan', DB::raw('COUNT(*) as cnt'))
-            ->groupBy('jenis_pengadaan')
-            ->pluck('cnt', 'jenis_pengadaan')
+            ->whereNotNull('metode_pengadaan')
+            ->selectRaw("LOWER(TRIM(metode_pengadaan)) as metode, COUNT(*) as cnt")
+            ->groupBy('metode')
+            ->pluck('cnt', 'metode')
             ->toArray();
 
         $out = [];
         foreach ($labels as $lbl) {
-            $alts = $map[$lbl] ?? [$lbl];
-            $sum  = 0;
-            foreach ($alts as $k) $sum += (int)($raw[$k] ?? 0);
-            $out[] = $sum;
+            // labels dari MasterMenu mungkin sudah mengandung \n (dari str_replace di dashboard)
+            // normalisasi: buang \n untuk matching
+            $normalized = strtolower(trim(str_replace("\n", ' ', $lbl)));
+
+            $alternatives = array_unique([
+                $normalized,
+                str_replace('catalogue', 'catalog', $normalized),
+                str_replace('catalog', 'catalogue', $normalized),
+                str_replace(' / ', '/', $normalized),
+                str_replace('/', ' / ', $normalized),
+            ]);
+
+            $total = 0;
+            foreach ($alternatives as $alt) {
+                $total += (int)($raw[$alt] ?? 0);
+            }
+            $out[] = $total;
         }
         return $out;
     }
@@ -264,7 +401,7 @@ class UnitController extends Controller
                 'pekerjaan'                    => ($p->nama_pekerjaan ?? '-'),
                 'id_rup'                       => $p->id_rup ?? '-',
                 'tahun'                        => $p->tahun ?? null,
-                'metode_pbj'                   => $p->jenis_pengadaan ?? '-',
+                'metode_pbj'                   => $p->metode_pengadaan ?? '-',
                 'jenis_pengadaan'              => $p->jenis_pengadaan ?? '-',
                 'status_pekerjaan'             => $p->status_pekerjaan ?? '-',
                 'status_arsip'                 => $p->status_arsip ?? '-',
@@ -728,6 +865,7 @@ class UnitController extends Controller
             $pengadaan->nama_pekerjaan   = $payload['nama_pekerjaan'];
             $pengadaan->id_rup           = $payload['id_rup'];
             $pengadaan->jenis_pengadaan  = $payload['jenis_pengadaan'];
+            $pengadaan->metode_pengadaan = $payload['metode_pengadaan'];
             $pengadaan->status_pekerjaan = $payload['status_pekerjaan'];
             $pengadaan->status_arsip     = $payload['status_arsip'];
 
@@ -1246,6 +1384,7 @@ class UnitController extends Controller
             'nama_pekerjaan'   => 'nullable|string|max:255',
             'id_rup'           => 'nullable|string|max:255',
             'jenis_pengadaan'  => 'required|string|max:100',
+            'metode_pengadaan' => 'required|string|max:100',
             'status_pekerjaan' => 'required|string|max:100',
             'status_arsip'     => 'required|in:Publik,Privat',
 
@@ -1304,7 +1443,8 @@ class UnitController extends Controller
 
             'nama_pekerjaan'   => $pick(['nama_pekerjaan', 'pekerjaan', 'judul', 'namaPekerjaan'], null),
             'id_rup'           => $pick(['id_rup', 'idrup', 'id_rup_paket', 'idRup'], null),
-            'jenis_pengadaan'  => $pick(['jenis_pengadaan', 'metode_pbj', 'metode', 'jenis_pbj'], null),
+            'jenis_pengadaan'  => $pick(['jenis_pengadaan', 'jenis_pbj'], null),
+            'metode_pengadaan' => $pick(['metode_pengadaan', 'metode_pbj', 'metode'], null),
             'status_pekerjaan' => $pick(['status_pekerjaan', 'status', 'statusPekerjaan'], null),
 
             'status_arsip' => $statusArsip,
