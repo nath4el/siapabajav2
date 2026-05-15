@@ -395,7 +395,18 @@ class UnitController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $mapped = $arsips->getCollection()->map(function (Pengadaan $p) {
+        // Ambil role semua creator sekaligus (1 query) agar tahu siapa yg membuat arsip
+        $creatorIds   = $arsips->getCollection()->pluck('created_by')->filter()->unique()->values();
+        $creatorUsers = User::whereIn('id', $creatorIds)->get(['id', 'name', 'role'])->keyBy('id');
+
+        $mapped = $arsips->getCollection()->map(function (Pengadaan $p) use ($creatorUsers) {
+            $creator         = $creatorUsers->get($p->created_by);
+            $creatorName     = $creator?->name ?? null;
+            $creatorRole     = strtolower(trim((string)($creator?->role ?? '')));
+            $dibuat          = $creatorName
+                ? ($creatorName . ($creatorRole ? ' (' . strtoupper(str_replace('_', ' ', $creatorRole)) . ')' : ''))
+                : null;
+
             return [
                 'id'                           => $p->id,
                 'pekerjaan'                    => ($p->nama_pekerjaan ?? '-'),
@@ -412,6 +423,8 @@ class UnitController extends Controller
                 'unit'                         => $p->unit?->nama ?? '-',
                 'dokumen'                      => $this->buildDokumenList($p),
                 'dokumen_tidak_dipersyaratkan' => $this->normalizeArray($p->dokumen_tidak_dipersyaratkan),
+                'created_by'                   => $p->created_by,
+                'created_by_name'              => $dibuat,  // info pembuat (PPK/SuperAdmin)
             ];
         });
 
@@ -1171,8 +1184,22 @@ class UnitController extends Controller
 
         if (!$matchPath || !Storage::disk('public')->exists($matchPath)) abort(404);
 
-        $publicUrl = '/storage/' . ltrim($matchPath, '/');
-        return redirect()->route('file.viewer', ['file' => $publicUrl]);
+        $ext    = strtolower(pathinfo($matchPath, PATHINFO_EXTENSION));
+        $mime   = Storage::disk('public')->mimeType($matchPath) ?: 'application/octet-stream';
+        $stream = Storage::disk('public')->readStream($matchPath);
+
+        // PDF & gambar: inline (preview di browser), lainnya: download
+        $inline      = in_array($ext, ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'], true);
+        $disposition = $inline ? 'inline' : 'attachment';
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+        }, 200, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => $disposition . '; filename="' . $file . '"',
+            'Cache-Control'       => 'private, no-store',
+            'X-Frame-Options'     => 'SAMEORIGIN',
+        ]);
     }
 
     public function fileViewer(Request $request)
@@ -1605,10 +1632,30 @@ class UnitController extends Controller
 
     public function historiAktivitas()
     {
+        $currentUser = auth()->user();
+        $unitId      = $currentUser->unit_id;
+
+        // Kumpulkan user_id yang relevan:
+        // 1. User unit itu sendiri
+        // 2. Semua PPK / Super Admin yang pernah membuat/mengedit pengadaan
+        //    milik unit ini (via kolom created_by pada tabel pengadaan)
+        $relatedUserIds = collect([$currentUser->id]);
+
+        if ($unitId) {
+            // Ambil created_by dari pengadaan yang unit_id-nya milik unit ini
+            $creatorIds = Pengadaan::where('unit_id', $unitId)
+                ->whereNotNull('created_by')
+                ->pluck('created_by')
+                ->unique()
+                ->values();
+
+            $relatedUserIds = $relatedUserIds->merge($creatorIds)->unique()->values();
+        }
+
         $logs = ActivityLog::with('user.unit')
-            ->where('user_id', auth()->id())   // scope ke user yang login
+            ->whereIn('user_id', $relatedUserIds)
             ->latest()
-            ->limit(100)
+            ->limit(200)
             ->get();
 
         $data = $logs->map(function ($log) {
@@ -1623,7 +1670,8 @@ class UnitController extends Controller
                     str_replace('_', ' ', $log->user->role ?? '-')
                 ),
 
-                'unit' => optional($log->user->unit)->nama ?? '-',
+                'unit' => optional($log->user->unit)->nama
+                    ?? ($log->user->name ?? '-'),
 
                 'aktivitas' => $log->description ?? '-',
             ];

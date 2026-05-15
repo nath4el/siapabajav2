@@ -73,6 +73,7 @@
     'hps' => $r['hps'] ?? null,
     'dokumen' => $r['dokumen'] ?? [],
     'doc_note' => $docNote,
+    'created_by_name' => $r['created_by_name'] ?? null,
     ];
     })->values()->all();
 
@@ -274,6 +275,7 @@
                 $idrupValue = $r['id_rup'] ?? ($parts[1] ?? '-');
                 $rekananValue = $r['nama_rekanan'] ?? '-';
                 $docsValue = $r['dokumen'] ?? [];
+                $createdByName = $r['created_by_name'] ?? null;
 
                 $nilaiRaw = preg_replace('/[^\d]/', '', (string) ($r['nilai_kontrak'] ?? ''));
                 $nilaiRaw = $nilaiRaw === '' ? '0' : $nilaiRaw;
@@ -287,10 +289,12 @@
 
                     <div class="ap-col ap-col-tahun">{{ $r['tahun'] }}</div>
                     <div class="ap-col ap-col-unit">{{ $r['unit'] }}</div>
-                    <div class="ap-col ap-col-job">{{ $namaPekerjaan }}</div>
+                    <div class="ap-col ap-col-job">
+                        {{ $namaPekerjaan }}
+                    </div>
 
                     <div class="ap-col ap-col-metode">
-                        <span class="metode-badge">{{ $r['metode_pbj'] }}</span>
+                        <span class="metode-badge">{{ $r['metode_pbj'] !== '-' ? $r['metode_pbj'] : '-' }}</span>
                     </div>
 
                     <div class="ap-col ap-col-nilai">{{ $r['nilai_kontrak'] }}</div>
@@ -316,6 +320,7 @@
                             data-hps="{{ $r['hps'] ?? '-' }}"
                             data-kontrak="{{ $r['nilai_kontrak'] }}"
                             data-docnote="{{ $r['doc_note'] ?? '' }}"
+                            data-createdby="{{ $createdByName ?? '' }}"
                             data-docs='@json($docsValue)'>
                             <i class="bi bi-info-circle-fill"></i>
                         </button>
@@ -889,6 +894,22 @@
             box-sizing: border-box;
         }
 
+        /* Badge arsip yang ditambahkan oleh PPK */
+        .ppk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: #eff6ff;
+            color: #2563eb;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid #bfdbfe;
+            white-space: nowrap;
+        }
+
         .sp-badge {
             display: inline-flex;
             align-items: center;
@@ -1301,6 +1322,25 @@
             color: inherit;
             flex: 0 0 auto;
             font-size: 15px;
+            transition: .15s;
+        }
+
+        .dt-doc-act-view:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .dt-doc-act-dl:hover {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #15803d;
+        }
+
+        .dt-doc-acts {
+            display: flex;
+            gap: 6px;
+            flex: 0 0 auto;
         }
 
         .dt-doc-empty {
@@ -1943,27 +1983,88 @@
                 let total = 0;
                 Object.keys(docs).forEach(grp => {
                     const arr = Array.isArray(docs[grp]) ? docs[grp] : [];
+
                     arr.forEach(doc => {
-                        let fileUrl = '',
-                            fileName = '-';
+
+                        let viewUrl = '',
+                            dlUrl = '',
+                            fileName = '-',
+                            docLabel = grp || 'Dokumen';
+
                         if (typeof doc === 'string') {
-                            fileUrl = normalizeStorageUrl(doc);
+
+                            // fallback: raw path string
+                            const storageUrl = normalizeStorageUrl(doc);
+
+                            viewUrl = storageUrl;
+                            dlUrl = storageUrl;
+
                             fileName = doc.split('/').filter(Boolean).pop() || 'Dokumen';
+
                         } else {
-                            fileUrl = normalizeStorageUrl(doc.url || doc.path || '');
-                            fileName = doc.name || doc.label || (fileUrl.split('/').filter(Boolean).pop() || 'Dokumen');
+
+                            // buildDokumenList returns: { label, name, path, url }
+                            // url  = route unit.arsip.dokumen.show
+                            // path = relative storage path
+
+                            docLabel = doc.label || grp || 'Dokumen';
+                            fileName = doc.name || '-';
+
+                            viewUrl = doc.url || normalizeStorageUrl(doc.path || '');
+
+                            // ✅ FIX DOWNLOAD
+                            if (doc.path && data.id) {
+
+                                const cleanPath = String(doc.path)
+                                    .replace(/^\/+/, '');
+
+                                dlUrl =
+                                    `/unit/arsip/${data.id}/dokumen-download` +
+                                    `?field=${encodeURIComponent(grp)}` +
+                                    `&path=${encodeURIComponent(cleanPath)}`;
+
+                            } else {
+
+                                dlUrl = doc.url || '#';
+
+                            }
                         }
+
                         total++;
+
                         const card = document.createElement('div');
+
                         card.className = 'dt-doc-card';
+
                         card.innerHTML = `
-                    <div class="dt-doc-ic"><i class="bi bi-file-earmark-text"></i></div>
-                    <div class="dt-doc-info">
-                        <div class="dt-doc-title">${grp || 'Dokumen'}</div>
-                        <div class="dt-doc-sub">${fileName}</div>
-                    </div>
-                    <a class="dt-doc-act" href="${fileUrl}" target="_blank" rel="noopener"><i class="bi bi-eye"></i></a>
-                `;
+        <div class="dt-doc-ic">
+            <i class="bi bi-file-earmark-text"></i>
+        </div>
+
+        <div class="dt-doc-info">
+            <div class="dt-doc-title">${docLabel}</div>
+            <div class="dt-doc-sub">${fileName}</div>
+        </div>
+
+        <div class="dt-doc-acts">
+            <a class="dt-doc-act dt-doc-act-view"
+               href="${viewUrl}"
+               target="_blank"
+               rel="noopener"
+               title="Lihat dokumen">
+                <i class="bi bi-eye"></i>
+            </a>
+
+           <a class="dt-doc-act dt-doc-act-dl"
+   href="${dlUrl}"
+   download
+   target="_self"
+   title="Unduh dokumen">
+    <i class="bi bi-download"></i>
+</a>
+        </div>
+    `;
+
                         dtDocList.appendChild(card);
                     });
                 });
@@ -2206,13 +2307,21 @@
                     }
 
                     historiData.forEach(item => {
+                        // Untuk PPK, kolom unit bisa '-'. Coba ekstrak dari deskripsi log
+                        // contoh deskripsi: "PPK menambahkan pengadaan: XXX (Unit: Badan Pengelola Keuangan)"
+                        let unitDisplay = item.unit || '-';
+                        if (unitDisplay === '-' && item.aktivitas) {
+                            const match = item.aktivitas.match(/\(Unit:\s*([^)]+)\)/);
+                            if (match) unitDisplay = match[1].trim();
+                        }
+
                         const row = document.createElement('div');
                         row.className = 'hist-tbl-row';
                         row.innerHTML = `
                             <div class="hist-col">${item.waktu || '-'}</div>
                             <div class="hist-col">${item.nama || '-'}</div>
                             <div class="hist-col">${item.role || '-'}</div>
-                            <div class="hist-col">${item.unit || '-'}</div>
+                            <div class="hist-col">${unitDisplay}</div>
                             <div class="hist-col">${item.aktivitas || '-'}</div>
                         `;
                         histTableBody.appendChild(row);

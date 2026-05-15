@@ -219,11 +219,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/arsip/{id}/dokumen/{field}/{file}', [PpkController::class, 'showDokumen'])
                 ->where(['field' => '[A-Za-z0-9_\-]+', 'file' => '.+'])
                 ->name('arsip.dokumen.show');
+            Route::get('/arsip/{id}/dokumen-download', [PpkController::class, 'downloadDokumen'])
+                ->name('arsip.dokumen.download');
 
             Route::get('/kelola-akun', [PpkController::class, 'kelolaAkun'])->name('kelola.akun');
             Route::put('/akun', [PpkController::class, 'updateAkun'])->name('akun.update');
 
-            Route::get('/histori', [PpkController::class, 'histori'])->name('histori');
+            Route::get('/histori', [PpkController::class, 'historiAktivitas'])->name('histori');
         });
 
     /*
@@ -249,9 +251,29 @@ Route::middleware('auth')->group(function () {
             Route::get('/pengadaan/tambah', [SuperAdminController::class, 'pengadaanCreate'])->name('pengadaan.create');
             Route::post('/pengadaan/store', [SuperAdminController::class, 'pengadaanStore'])->name('pengadaan.store');
 
-            Route::get('/arsip/{id}/dokumen/{field}/{file}', [SuperAdminController::class, 'showDokumen'])
-                ->where(['field' => '[A-Za-z0-9_\-]+', 'file' => '.+'])
-                ->name('arsip.dokumen.show');
+            Route::get(
+                '/arsip/{id}/dokumen/{field}/{file}',
+                [SuperAdminController::class, 'showDokumen']
+            )->where([
+                'field' => '[A-Za-z0-9_\-]+',
+                'file'  => '.+'
+            ])->name('arsip.dokumen.show');
+
+            // ← route download terpisah (force attachment, tidak inline)
+            Route::get(
+                '/arsip/{id}/dokumen-download',
+                [SuperAdminController::class, 'downloadDokumen']
+            )->name('arsip.dokumen.download');
+
+            Route::get(
+                '/activity-logs',
+                [SuperAdminController::class, 'activityLogs']
+            )->name('activity.logs');
+
+            Route::get(
+                '/histori',
+                [SuperAdminController::class, 'historiAktivitas']
+            )->name('histori');
 
             /*
 |--------------------------------------------------------------------------
@@ -303,9 +325,5 @@ Route::middleware('auth')->group(function () {
             Route::post('/kelola-akun/unit', [SuperAdminController::class, 'storeUnit'])->name('kelola.akun.unit.store');
             Route::put('/kelola-akun/unit/{id}', [SuperAdminController::class, 'updateUnit'])->name('kelola.akun.unit.update');
             Route::delete('/kelola-akun/unit/{id}', [SuperAdminController::class, 'destroyUnit'])->name('kelola.akun.unit.destroy');
-            Route::patch(
-                '/kelola-menu/{type}/{id}/toggle',
-                [SuperAdminController::class, 'toggleMenuStatus']
-            )->name('kelola.menu.toggle');
         });
 });

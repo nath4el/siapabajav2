@@ -873,6 +873,113 @@ class SuperAdminController extends Controller
                 ]);
         }
     }
+
+    public function showDokumen($id, $field, $file)
+    {
+        $allowed = $this->dokumenFieldLabels();
+
+        if (!array_key_exists($field, $allowed)) {
+            abort(404);
+        }
+
+        $pengadaan = Pengadaan::findOrFail($id);
+
+        $arr = $this->normalizeArray($pengadaan->{$field});
+
+        $matchPath = null;
+
+        foreach ($arr as $p) {
+
+            $p = ltrim((string)$p, '/');
+
+            if (basename($p) === $file) {
+                $matchPath = $p;
+                break;
+            }
+        }
+
+        if (
+            !$matchPath ||
+            !Storage::disk('public')->exists($matchPath)
+        ) {
+            abort(404);
+        }
+
+        $ext = strtolower(
+            pathinfo($matchPath, PATHINFO_EXTENSION)
+        );
+
+        $mime = Storage::disk('public')
+            ->mimeType($matchPath)
+            ?: 'application/octet-stream';
+
+        $stream = Storage::disk('public')
+            ->readStream($matchPath);
+
+        // PDF & gambar → preview browser
+        $inline = in_array(
+            $ext,
+            ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'],
+            true
+        );
+
+        $disposition = $inline
+            ? 'inline'
+            : 'attachment';
+
+        return response()->stream(
+            function () use ($stream) {
+                fpassthru($stream);
+            },
+            200,
+            [
+                'Content-Type' => $mime,
+
+                'Content-Disposition' =>
+                $disposition .
+                    '; filename="' . $file . '"',
+
+                'Cache-Control' => 'private, no-store',
+
+                'X-Frame-Options' => 'SAMEORIGIN',
+            ]
+        );
+    }
+
+    /**
+     * Force-download dokumen (selalu attachment, tidak inline).
+     * GET /super-admin/arsip/{id}/dokumen-download?field=xxx&file=yyy
+     */
+    public function downloadDokumen(Request $request, $id)
+    {
+        $field = $request->query('field');
+        $file  = $request->query('file');
+
+        $allowed = $this->dokumenFieldLabels();
+
+        if (!$field || !$file || !array_key_exists($field, $allowed)) {
+            abort(404);
+        }
+
+        $pengadaan = Pengadaan::findOrFail($id);
+        $arr       = $this->normalizeArray($pengadaan->{$field});
+
+        $matchPath = null;
+        foreach ($arr as $p) {
+            $p = ltrim((string) $p, '/');
+            if (basename($p) === $file) {
+                $matchPath = $p;
+                break;
+            }
+        }
+
+        if (!$matchPath || !Storage::disk('public')->exists($matchPath)) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->download($matchPath, $file);
+    }
+
     public function kelolaMenu()
     {
         $superAdminName = Auth::user()->name ?? "Super Admin";
@@ -1209,28 +1316,7 @@ class SuperAdminController extends Controller
             ->with('success', 'Data admin PPK berhasil dihapus.');
     }
 
-    public function showDokumen($id, $field, $file)
-    {
-        $pengadaan = Pengadaan::findOrFail($id);
 
-        if (!isset($pengadaan->{$field})) {
-            abort(404);
-        }
-
-        $arr = $this->normalizeArray($pengadaan->{$field});
-
-        foreach ($arr as $raw) {
-            $path = $this->normalizePublicDiskPath($raw);
-            if (!$path) continue;
-
-            if (basename($path) === $file) {
-                $publicUrl = '/storage/' . ltrim($path, '/');
-                return redirect()->route('file.viewer', ['file' => $publicUrl]);
-            }
-        }
-
-        abort(404);
-    }
 
     public function kelolaAkunUnit()
     {
@@ -1568,7 +1654,14 @@ class SuperAdminController extends Controller
                     'label' => $label,
                     'name'  => $file,
                     'path'  => $path,
-                    'url'   => '/storage/' . ltrim($path, '/'),
+                    'url' => route(
+                        'superadmin.arsip.dokumen.show',
+                        [
+                            'id'    => $p->id,
+                            'field' => $field,
+                            'file'  => $file,
+                        ]
+                    ),
                 ];
             }
         }
@@ -1729,6 +1822,67 @@ class SuperAdminController extends Controller
 
         return null;
     }
+    /**
+     * Histori Aktivitas – dipanggil via AJAX dari blade ArsipPBJ.
+     * GET /super-admin/histori  (Accept: application/json)
+     *
+     * Response:
+     * {
+     *   "data": [
+     *     { "waktu": "...", "nama_akun": "...", "role": "...", "unit_kerja": "...", "aktivitas": "..." }
+     *   ]
+     * }
+     */
+    public function historiAktivitas(Request $request)
+    {
+        $logs = ActivityLog::with('user.unit')
+            ->orderByDesc('created_at')
+            ->limit(200)
+            ->get()
+            ->map(function ($log) {
+                /** @var \App\Models\User|null $user */
+                $user = $log->user;
+
+                $namaAkun  = $user?->name  ?? '(akun dihapus)';
+                $role      = $user?->role  ?? '-';
+                $unitKerja = $user?->unit?->nama
+                    ?? $user?->unit?->nama_unit
+                    ?? $user?->unit?->name
+                    ?? '-';
+
+                // Format waktu Indonesia
+                $waktu = $log->created_at
+                    ? $log->created_at->timezone('Asia/Jakarta')->format('d M Y H:i')
+                    : '-';
+
+                // Aktivitas: gabung action + description
+                $aktivitas = trim(
+                    ($log->action ? "[{$log->action}] " : '') .
+                        ($log->description ?? '')
+                );
+
+                return [
+                    'waktu'      => $waktu,
+                    'nama_akun'  => $namaAkun,
+                    'role'       => strtoupper($role),
+                    'unit_kerja' => $unitKerja,
+                    'aktivitas'  => $aktivitas ?: '-',
+                ];
+            })
+            ->values()
+            ->all();
+
+        return response()->json(['data' => $logs]);
+    }
+
+    /**
+     * Activity Logs (alias untuk histori, bisa dipakai route lama)
+     */
+    public function activityLogs(Request $request)
+    {
+        return $this->historiAktivitas($request);
+    }
+
     private function logActivity($action, $description)
     {
         ActivityLog::create([

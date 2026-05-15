@@ -4,6 +4,7 @@ namespace App\Http\Controllers\PPK;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\MasterMenu;
 use App\Models\Pengadaan;
 use App\Models\Unit;
 use Illuminate\Http\Request;
@@ -33,14 +34,25 @@ class PpkController extends Controller
     {
         $ppkName = auth()->user()->name ?? 'PPK Utama';
 
-        $tahunOptions = Pengadaan::whereNotNull('tahun')
-            ->select('tahun')
-            ->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun')
+        // ✅ Tahun dari MasterMenu (tersinkron dengan Kelola Menu Super Admin)
+        $tahunOptions = MasterMenu::where('category', 'tahun')
+            ->where('is_active', true)
+            ->orderByDesc('nama')
+            ->pluck('nama')
             ->map(fn($t) => (int)$t)
             ->values()
             ->all();
+
+        // Fallback jika MasterMenu kosong
+        if (count($tahunOptions) === 0) {
+            $tahunOptions = Pengadaan::whereNotNull('tahun')
+                ->select('tahun')->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun')
+                ->map(fn($t) => (int)$t)
+                ->values()
+                ->all();
+        }
 
         if (count($tahunOptions) === 0) {
             $y = (int)date('Y');
@@ -84,17 +96,27 @@ class PpkController extends Controller
             ["label" => "Total Nilai Pengadaan",    "value" => $this->formatRupiahNumber($nilaiAll),  "accent" => "yellow", "icon" => "bi-buildings",         "sub" => "Nilai Kontrak Pengadaan"],
         ];
 
-        $statusLabels = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
+        // ✅ Labels dari MasterMenu
+        $statusLabels = MasterMenu::where('category', 'status_pekerjaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+        if (empty($statusLabels)) $statusLabels = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
+
         $statusValues = $this->countByStatusPekerjaanPPK(null, null, $statusLabels);
 
-        $barLabels = [
-            "Pengadaan\nLangsung",
-            "Penunjukan\nLangsung",
-            "E-Purchasing /\nE-Catalog",
-            "Tender\nTerbatas",
-            "Tender\nTerbuka",
-            "Swakelola"
-        ];
+        $barLabels = MasterMenu::where('category', 'metode_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->map(fn($item) => str_replace(' ', "\n", $item))
+            ->values()
+            ->all();
+        if (empty($barLabels)) {
+            $barLabels = ["Pengadaan\nLangsung", "Penunjukan\nLangsung", "E-Purchasing /\nE-Catalog", "Tender\nTerbatas", "Tender\nTerbuka", "Swakelola"];
+        }
         $barValues = $this->countByMetodePengadaanPPK(null, null, $barLabels);
 
         return view('PPK.Dashboard', compact(
@@ -137,17 +159,27 @@ class PpkController extends Controller
             ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
             ->sum('nilai_kontrak');
 
-        $statusLabels = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
+        // ✅ Labels dari MasterMenu
+        $statusLabels = MasterMenu::where('category', 'status_pekerjaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+        if (empty($statusLabels)) $statusLabels = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
+
         $statusValues = $this->countByStatusPekerjaanPPK($unitId, $tahun, $statusLabels);
 
-        $barLabels = [
-            "Pengadaan\nLangsung",
-            "Penunjukan\nLangsung",
-            "E-Purchasing /\nE-Catalog",
-            "Tender\nTerbatas",
-            "Tender\nTerbuka",
-            "Swakelola"
-        ];
+        $barLabels = MasterMenu::where('category', 'metode_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->map(fn($item) => str_replace(' ', "\n", $item))
+            ->values()
+            ->all();
+        if (empty($barLabels)) {
+            $barLabels = ["Pengadaan\nLangsung", "Penunjukan\nLangsung", "E-Purchasing /\nE-Catalog", "Tender\nTerbatas", "Tender\nTerbuka", "Swakelola"];
+        }
         $barValues = $this->countByMetodePengadaanPPK($unitId, $tahun, $barLabels);
 
         return response()->json([
@@ -180,43 +212,34 @@ class PpkController extends Controller
 
     private function countByMetodePengadaanPPK(?int $unitId, ?int $tahun, array $labels): array
     {
-        // ✅ Normalisasi supaya konek konsisten dengan nilai "jenis_pengadaan" di detail Arsip
-        $map = [
-            "Pengadaan\nLangsung"       => ["pengadaan langsung"],
-            "Penunjukan\nLangsung"      => ["penunjukan langsung"],
-            "E-Purchasing /\nE-Catalog" => [
-                "e-purchasing / e-catalog",
-                "e-purchasing/e-catalog",
-                "e-purchasing",
-                "e-catalog",
-                "e-catalogue",
-                "ecatalog",
-                "e catalog",
-            ],
-            "Tender\nTerbatas"          => ["tender terbatas"],
-            "Tender\nTerbuka"           => ["tender terbuka", "tender"],
-            "Swakelola"                 => ["swakelola"],
-        ];
-
         $raw = Pengadaan::query()
             ->when($unitId !== null, fn($q) => $q->where('unit_id', $unitId))
             ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
-            ->whereNotNull('jenis_pengadaan')
-            ->whereRaw("TRIM(jenis_pengadaan) <> ''")
-            ->selectRaw("LOWER(TRIM(jenis_pengadaan)) as jp, COUNT(*) as cnt")
-            ->groupBy('jp')
-            ->pluck('cnt', 'jp')
+            ->whereNotNull('metode_pengadaan')
+            ->whereRaw("TRIM(metode_pengadaan) <> ''")
+            ->selectRaw("LOWER(TRIM(metode_pengadaan)) as metode, COUNT(*) as cnt")
+            ->groupBy('metode')
+            ->pluck('cnt', 'metode')
             ->toArray();
 
         $out = [];
         foreach ($labels as $lbl) {
-            $alts = $map[$lbl] ?? [mb_strtolower(trim($lbl), 'UTF-8')];
-            $sum = 0;
-            foreach ($alts as $k) {
-                $k    = mb_strtolower(trim($k), 'UTF-8');
-                $sum += (int)($raw[$k] ?? 0);
+            // Normalisasi label (buang \n untuk matching)
+            $normalized = strtolower(trim(str_replace("\n", ' ', $lbl)));
+
+            $alternatives = array_unique([
+                $normalized,
+                str_replace('catalogue', 'catalog', $normalized),
+                str_replace('catalog', 'catalogue', $normalized),
+                str_replace(' / ', '/', $normalized),
+                str_replace('/', ' / ', $normalized),
+            ]);
+
+            $total = 0;
+            foreach ($alternatives as $alt) {
+                $total += (int)($raw[$alt] ?? 0);
             }
-            $out[] = $sum;
+            $out[] = $total;
         }
         return $out;
     }
@@ -302,7 +325,7 @@ class PpkController extends Controller
                         ->orWhere('id_rup',          $likeOp, $like)
                         ->orWhere('jenis_pengadaan', $likeOp, $like)
                         ->orWhere('status_arsip',    $likeOp, $like)
-                        ->orWhere('status_pekerjaan',$likeOp, $like)
+                        ->orWhere('status_pekerjaan', $likeOp, $like)
                         ->orWhere('nama_rekanan',    $likeOp, $like);
 
                     if ($driver === 'pgsql') {
@@ -350,13 +373,19 @@ class PpkController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $mapped = $arsips->getCollection()->map(function (Pengadaan $p) {
+        // ✅ ambil role semua creator sekaligus (1 query, bukan N query)
+        $creatorIds = $arsips->getCollection()->pluck('created_by')->filter()->unique()->values();
+        $creatorRoles = \App\Models\User::whereIn('id', $creatorIds)
+            ->pluck('role', 'id');
+
+        $mapped = $arsips->getCollection()->map(function (Pengadaan $p) use ($creatorRoles) {
+            $createdByRole = strtolower(trim((string)($creatorRoles[$p->created_by] ?? '')));
             return [
                 'id'                            => $p->id,
                 'pekerjaan'                     => ($p->nama_pekerjaan ?? '-'),
                 'id_rup'                        => $p->id_rup ?? '-',
                 'tahun'                         => $p->tahun ?? null,
-                'metode_pbj'                    => $p->jenis_pengadaan ?? '-',
+                'metode_pbj'                    => $p->metode_pengadaan ?? '-',
                 'jenis_pengadaan'               => $p->jenis_pengadaan ?? '-',
                 'status_pekerjaan'              => $p->status_pekerjaan ?? '-',
                 'status_arsip'                  => $p->status_arsip ?? '-',
@@ -367,19 +396,31 @@ class PpkController extends Controller
                 'unit'                          => $p->unit?->nama ?? ($p->unit?->nama_unit ?? ($p->unit?->name ?? '-')),
                 'dokumen'                       => $this->buildDokumenList($p),
                 'dokumen_tidak_dipersyaratkan'  => $this->normalizeArray($p->dokumen_tidak_dipersyaratkan),
+                'created_by'                    => $p->created_by,
+                'created_by_role'               => $createdByRole, // ✅ role pembuat arsip
             ];
         });
 
         $arsips->setCollection($mapped);
 
-        $years = Pengadaan::whereNotNull('tahun')
-            ->select('tahun')
-            ->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun')
+        // ✅ Tahun dari MasterMenu
+        $years = MasterMenu::where('category', 'tahun')
+            ->where('is_active', true)
+            ->orderByDesc('nama')
+            ->pluck('nama')
             ->map(fn($t) => (string)$t)
             ->values()
             ->all();
+
+        if (count($years) === 0) {
+            $years = Pengadaan::whereNotNull('tahun')
+                ->select('tahun')->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun')
+                ->map(fn($t) => (string)$t)
+                ->values()
+                ->all();
+        }
 
         if (count($years) === 0) {
             $y     = (int)date('Y');
@@ -402,50 +443,74 @@ class PpkController extends Controller
     {
         $ppkName = auth()->user()->name ?? "PPK Utama";
 
-        $tahunOptions = Pengadaan::whereNotNull('tahun')
-            ->select('tahun')->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun')
+        // ✅ Dropdown dari MasterMenu
+        $tahunOptions = MasterMenu::where('category', 'tahun')
+            ->where('is_active', true)
+            ->orderByDesc('nama')
+            ->pluck('nama')
             ->map(fn($t) => (int)$t)
             ->values()
             ->all();
 
         if (count($tahunOptions) === 0) {
-            $y            = (int)date('Y');
+            $tahunOptions = Pengadaan::whereNotNull('tahun')
+                ->select('tahun')->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun')
+                ->map(fn($t) => (int)$t)
+                ->values()
+                ->all();
+        }
+
+        if (count($tahunOptions) === 0) {
+            $y = (int)date('Y');
             $tahunOptions = [$y, $y - 1, $y - 2, $y - 3, $y - 4];
         }
 
-        // ✅ kolom nama unit fleksibel
+        $jenisPengadaanOptions = MasterMenu::where('category', 'jenis_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+
+        if (empty($jenisPengadaanOptions)) {
+            $jenisPengadaanOptions = ["Pengadaan Barang", "Pengadaan Pekerjaan Konstruksi", "Pengadaan Jasa Konsultasi", "Pengadaan Jasa Lainnya"];
+        }
+
+        $metodePengadaanOptions = MasterMenu::where('category', 'metode_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+
+        if (empty($metodePengadaanOptions)) {
+            $metodePengadaanOptions = ["Pengadaan Langsung", "Penunjukan Langsung", "E-Purchasing / E-Catalog", "Tender Terbatas", "Tender Terbuka", "Swakelola"];
+        }
+
+        $statusPekerjaanOptions = MasterMenu::where('category', 'status_pekerjaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+
+        if (empty($statusPekerjaanOptions)) {
+            $statusPekerjaanOptions = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
+        }
+
+        // ✅ Unit dropdown
         $unitNameCol = Schema::hasColumn('units', 'nama') ? 'nama'
             : (Schema::hasColumn('units', 'nama_unit') ? 'nama_unit'
                 : (Schema::hasColumn('units', 'name') ? 'name' : 'id'));
 
-        // ✅ kirim data unit untuk dropdown berbasis unit_id (id + nama)
         $units = Unit::query()
             ->select(['id', $unitNameCol])
             ->orderBy($unitNameCol, 'asc')
             ->get();
 
-        // ✅ tetap kirim juga versi lama (nama-nama) biar tidak memecahkan blade lama kalau masih dipakai
         $unitOptions = $units->pluck($unitNameCol)->values()->all();
-
-        $jenisPengadaanOptions = [
-            "Pengadaan Barang",
-            "Pengadaan Pekerjaan Konstruksi",
-            "Pengadaan Jasa Konsultasi",
-            "Pengadaan Jasa Lainnya",
-        ];
-
-        $metodePengadaanOptions = [
-            "Pengadaan Langsung",
-            "Penunjukan Langsung",
-            "E-Purchasing / E-Catalog",
-            "Tender Terbatas",
-            "Tender Terbuka",
-            "Swakelola",
-        ];
-
-        $statusPekerjaanOptions = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
 
         return view('PPK.TambahPengadaan', compact(
             'ppkName',
@@ -472,7 +537,8 @@ class PpkController extends Controller
 
             'nama_pekerjaan' => 'nullable|string|max:255',
             'id_rup'         => 'nullable|string|max:255',
-            'jenis_pengadaan'=> 'required|string|max:100',
+            'jenis_pengadaan' => 'required|string|max:100',
+            'metode_pengadaan' => 'required|string|max:100',
             'status_pekerjaan' => 'required|string|max:100',
             'status_arsip'   => 'required|in:Publik,Privat',
 
@@ -514,6 +580,7 @@ class PpkController extends Controller
             'nama_pekerjaan'   => $data['nama_pekerjaan'] ?? null,
             'id_rup'           => $data['id_rup'] ?? null,
             'jenis_pengadaan'  => $data['jenis_pengadaan'],
+            'metode_pengadaan' => $data['metode_pengadaan'],
             'status_pekerjaan' => $data['status_pekerjaan'],
             'status_arsip'     => $data['status_arsip'],
 
@@ -539,10 +606,12 @@ class PpkController extends Controller
         try {
             $pengadaan = Pengadaan::create($payload);
 
-            // ✅ LOG: tambah pengadaan
+            // ✅ LOG: tambah pengadaan (sertakan nama unit agar histori unit bisa menampilkannya)
+            $unitNamaLog = optional(\App\Models\Unit::find($resolvedUnitId))->nama ?? ('Unit #' . $resolvedUnitId);
             $this->logActivity(
                 'create',
                 'PPK menambahkan pengadaan: ' . ($payload['nama_pekerjaan'] ?? 'Tanpa Nama')
+                    . ' (Unit: ' . $unitNamaLog . ')'
             );
 
             $this->handleUploadDokumenToModel($request, $pengadaan, false);
@@ -555,8 +624,14 @@ class PpkController extends Controller
             DB::rollBack();
 
             if (isset($pengadaan) && $pengadaan instanceof Pengadaan) {
-                try { Storage::disk('public')->deleteDirectory("pengadaan/{$pengadaan->id}"); } catch (\Throwable $ex) {}
-                try { $pengadaan->delete(); } catch (\Throwable $ex) {}
+                try {
+                    Storage::disk('public')->deleteDirectory("pengadaan/{$pengadaan->id}");
+                } catch (\Throwable $ex) {
+                }
+                try {
+                    $pengadaan->delete();
+                } catch (\Throwable $ex) {
+                }
             }
 
             return redirect()->back()->withInput()->withErrors(['upload' => 'Gagal menyimpan pengadaan/dokumen.']);
@@ -570,44 +645,65 @@ class PpkController extends Controller
         $pengadaan = Pengadaan::with('unit')->findOrFail($id);
         $arsip     = $pengadaan;
 
-        $tahunOptions = Pengadaan::whereNotNull('tahun')
-            ->select('tahun')->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun')
+        // ✅ Dropdown dari MasterMenu
+        $tahunOptions = MasterMenu::where('category', 'tahun')
+            ->where('is_active', true)
+            ->orderByDesc('nama')
+            ->pluck('nama')
             ->map(fn($t) => (int)$t)
             ->values()
             ->all();
 
         if (count($tahunOptions) === 0) {
-            $y            = (int)date('Y');
+            $tahunOptions = Pengadaan::whereNotNull('tahun')
+                ->select('tahun')->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun')
+                ->map(fn($t) => (int)$t)
+                ->values()
+                ->all();
+        }
+        if (count($tahunOptions) === 0) {
+            $y = (int)date('Y');
             $tahunOptions = [$y, $y - 1, $y - 2, $y - 3, $y - 4];
+        }
+
+        $jenisPengadaanOptions = MasterMenu::where('category', 'jenis_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+        if (empty($jenisPengadaanOptions)) {
+            $jenisPengadaanOptions = ["Pengadaan Barang", "Pengadaan Pekerjaan Konstruksi", "Pengadaan Jasa Konsultasi", "Pengadaan Jasa Lainnya"];
+        }
+
+        $metodePengadaanOptions = MasterMenu::where('category', 'metode_pengadaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+        if (empty($metodePengadaanOptions)) {
+            $metodePengadaanOptions = ["Pengadaan Langsung", "Penunjukan Langsung", "E-Purchasing / E-Catalogue", "Tender Terbatas", "Tender Terbuka", "Swakelola"];
+        }
+
+        $statusPekerjaanOptions = MasterMenu::where('category', 'status_pekerjaan')
+            ->where('is_active', true)
+            ->orderBy('order_index')
+            ->pluck('nama')
+            ->values()
+            ->all();
+        if (empty($statusPekerjaanOptions)) {
+            $statusPekerjaanOptions = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
         }
 
         $unitNameCol = Schema::hasColumn('units', 'nama') ? 'nama'
             : (Schema::hasColumn('units', 'nama_unit') ? 'nama_unit'
                 : (Schema::hasColumn('units', 'name') ? 'name' : 'id'));
 
-        // ✅ untuk dropdown edit berbasis unit_id
         $units       = Unit::query()->select(['id', $unitNameCol])->orderBy($unitNameCol, 'asc')->get();
-        $unitOptions = $units->pluck($unitNameCol)->values()->all(); // backward-compat
-
-        $jenisPengadaanOptions = [
-            "Pengadaan Barang",
-            "Pengadaan Pekerjaan Konstruksi",
-            "Pengadaan Jasa Konsultasi",
-            "Pengadaan Jasa Lainnya",
-        ];
-
-        $metodePengadaanOptions = [
-            "Pengadaan Langsung",
-            "Penunjukan Langsung",
-            "E-Purchasing / E-Catalogue",
-            "Tender Terbatas",
-            "Tender Terbuka",
-            "Swakelola",
-        ];
-
-        $statusPekerjaanOptions = ["Perencanaan", "Pemilihan", "Pelaksanaan", "Selesai"];
+        $unitOptions = $units->pluck($unitNameCol)->values()->all();
 
         $pengadaan->dokumen_tidak_dipersyaratkan = $this->normalizeArray($pengadaan->dokumen_tidak_dipersyaratkan);
 
@@ -640,6 +736,7 @@ class PpkController extends Controller
             'nama_pekerjaan'   => 'nullable|string|max:255',
             'id_rup'           => 'nullable|string|max:255',
             'jenis_pengadaan'  => 'nullable|string|max:100',
+            'metode_pengadaan' => 'nullable|string|max:100',
             'status_pekerjaan' => 'nullable|string|max:100',
             'status_arsip'     => 'nullable|in:Publik,Privat',
 
@@ -685,8 +782,9 @@ class PpkController extends Controller
 
             if ($request->filled('nama_pekerjaan'))  $pengadaan->nama_pekerjaan  = $data['nama_pekerjaan'];
             if ($request->filled('id_rup'))           $pengadaan->id_rup          = $data['id_rup'];
-            if ($request->filled('jenis_pengadaan'))  $pengadaan->jenis_pengadaan = $data['jenis_pengadaan'];
-            if ($request->filled('status_pekerjaan')) $pengadaan->status_pekerjaan= $data['status_pekerjaan'];
+            if ($request->filled('jenis_pengadaan'))  $pengadaan->jenis_pengadaan  = $data['jenis_pengadaan'];
+            if ($request->filled('metode_pengadaan')) $pengadaan->metode_pengadaan = $data['metode_pengadaan'];
+            if ($request->filled('status_pekerjaan')) $pengadaan->status_pekerjaan = $data['status_pekerjaan'];
             if ($request->filled('status_arsip'))     $pengadaan->status_arsip    = $data['status_arsip'];
 
             if (array_key_exists('pagu_anggaran', $data)) $pengadaan->pagu_anggaran = $toInt($data['pagu_anggaran']);
@@ -711,10 +809,12 @@ class PpkController extends Controller
 
             $pengadaan->save();
 
-            // ✅ LOG: edit pengadaan
+            // ✅ LOG: edit pengadaan (sertakan nama unit agar histori unit bisa menampilkannya)
+            $unitNamaEdit = optional($pengadaan->unit)->nama ?? ('Unit #' . $pengadaan->unit_id);
             $this->logActivity(
                 'update',
-                'PPK mengedit pengadaan ID: ' . $pengadaan->id
+                'PPK mengedit pengadaan: ' . ($pengadaan->nama_pekerjaan ?? 'ID ' . $pengadaan->id)
+                    . ' (Unit: ' . $unitNamaEdit . ')'
             );
 
             DB::commit();
@@ -732,13 +832,18 @@ class PpkController extends Controller
 
         DB::beginTransaction();
         try {
-            // ✅ LOG: hapus pengadaan (sebelum delete agar data masih tersedia)
+            // ✅ LOG: hapus pengadaan (sebelum delete agar data masih tersedia, sertakan nama unit)
+            $unitNamaDel = optional($pengadaan->unit)->nama ?? ('Unit #' . $pengadaan->unit_id);
             $this->logActivity(
                 'delete',
                 'PPK menghapus pengadaan: ' . ($pengadaan->nama_pekerjaan ?? 'ID ' . $pengadaan->id)
+                    . ' (Unit: ' . $unitNamaDel . ')'
             );
 
-            try { Storage::disk('public')->deleteDirectory("pengadaan/{$pengadaan->id}"); } catch (\Throwable $e) {}
+            try {
+                Storage::disk('public')->deleteDirectory("pengadaan/{$pengadaan->id}");
+            } catch (\Throwable $e) {
+            }
             $pengadaan->delete();
 
             DB::commit();
@@ -778,7 +883,10 @@ class PpkController extends Controller
 
         DB::beginTransaction();
         try {
-            try { Storage::disk('public')->delete($normPath); } catch (\Throwable $e) {}
+            try {
+                Storage::disk('public')->delete($normPath);
+            } catch (\Throwable $e) {
+            }
 
             // ✅ LOG: hapus file dokumen (sebelum save)
             $this->logActivity(
@@ -844,23 +952,108 @@ class PpkController extends Controller
 
     public function showDokumen($id, $field, $file)
     {
-        $pengadaan = Pengadaan::findOrFail($id);
+        $allowed = $this->dokumenFieldLabels();
 
-        if (!isset($pengadaan->{$field})) abort(404);
+        if (!array_key_exists($field, $allowed)) {
+            abort(404);
+        }
+
+        $pengadaan = Pengadaan::findOrFail($id);
 
         $arr = $this->normalizeArray($pengadaan->{$field});
 
-        foreach ($arr as $raw) {
-            $path = $this->normalizePublicDiskPath($raw);
-            if (!$path) continue;
+        $matchPath = null;
 
-            if (basename($path) === $file) {
-                $publicUrl = '/storage/' . ltrim($path, '/');
-                return redirect()->route('file.viewer', ['file' => $publicUrl]);
+        foreach ($arr as $p) {
+
+            $p = ltrim((string)$p, '/');
+
+            if (basename($p) === $file) {
+                $matchPath = $p;
+                break;
             }
         }
 
-        abort(404);
+        if (
+            !$matchPath ||
+            !Storage::disk('public')->exists($matchPath)
+        ) {
+            abort(404);
+        }
+
+        $ext = strtolower(
+            pathinfo($matchPath, PATHINFO_EXTENSION)
+        );
+
+        $mime = Storage::disk('public')
+            ->mimeType($matchPath)
+            ?: 'application/octet-stream';
+
+        $stream = Storage::disk('public')
+            ->readStream($matchPath);
+
+        // PDF & gambar → preview browser
+        $inline = in_array(
+            $ext,
+            ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'],
+            true
+        );
+
+        $disposition = $inline
+            ? 'inline'
+            : 'attachment';
+
+        return response()->stream(
+            function () use ($stream) {
+                fpassthru($stream);
+            },
+            200,
+            [
+                'Content-Type' => $mime,
+
+                'Content-Disposition' =>
+                $disposition .
+                    '; filename="' . $file . '"',
+
+                'Cache-Control' => 'private, no-store',
+
+                'X-Frame-Options' => 'SAMEORIGIN',
+            ]
+        );
+    }
+    public function downloadDokumen($id, Request $request)
+    {
+        $request->validate([
+            'field' => 'required|string|max:100',
+            'path'  => 'required|string',
+        ]);
+
+        $field = $request->field;
+
+        $path = ltrim(
+            str_replace('\\', '/', $request->path),
+            '/'
+        );
+
+        $pengadaan = Pengadaan::findOrFail($id);
+
+        $allowed = $this->dokumenFieldLabels();
+
+        // validasi field dokumen
+        if (!array_key_exists($field, $allowed)) {
+            abort(404);
+        }
+
+        // validasi file exists
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        // force download
+        return Storage::disk('public')->download(
+            $path,
+            basename($path)
+        );
     }
 
     // =========================
@@ -887,7 +1080,10 @@ class PpkController extends Controller
             }));
 
             foreach ($removeNorm as $p) {
-                try { Storage::disk('public')->delete($p); } catch (\Throwable $e) {}
+                try {
+                    Storage::disk('public')->delete($p);
+                } catch (\Throwable $e) {
+                }
             }
 
             $pengadaan->{$field} = $new;
@@ -957,7 +1153,14 @@ class PpkController extends Controller
                     'label' => $label,
                     'name'  => $file,
                     'path'  => $path,
-                    'url'   => '/storage/' . ltrim($path, '/'),
+                    'url' => route(
+                        'ppk.arsip.dokumen.show',
+                        [
+                            'id'    => $p->id,
+                            'field' => $field,
+                            'file'  => basename($path),
+                        ]
+                    ),
                 ];
             }
         }
@@ -1000,7 +1203,7 @@ class PpkController extends Controller
             'dokumen_lembar_data_pemilihan'     => 'Lembar Data Pemilihan',
             'dokumen_daftar_kuantitas_harga'    => 'Daftar Kuantitas dan Harga',
             'dokumen_jadwal_lokasi_pekerjaan'   => 'Jadwal & Lokasi Pekerjaan',
-            'dokumen_gambar_rancangan_pekerjaan'=> 'Gambar Rancangan Pekerjaan',
+            'dokumen_gambar_rancangan_pekerjaan' => 'Gambar Rancangan Pekerjaan',
             'dokumen_amdal'                    => 'Dokumen AMDAL',
             'dokumen_penawaran'                => 'Dokumen Penawaran',
             'surat_penawaran'                  => 'Surat Penawaran',
@@ -1107,5 +1310,33 @@ class PpkController extends Controller
         }
 
         return null;
+    }
+
+    // =========================
+    // HISTORI AKTIVITAS
+    // =========================
+    public function historiAktivitas()
+    {
+        $logs = ActivityLog::with('user.unit')
+            ->latest()
+            ->limit(200)
+            ->get();
+
+        $data = $logs->map(function ($log) {
+            return [
+                'waktu'      => optional($log->created_at)
+                    ->timezone('Asia/Jakarta')
+                    ->format('d M Y H:i'),
+                'nama'       => $log->user->name ?? '-',
+                'nama_akun'  => $log->user->name ?? '-',
+                'role'       => strtoupper(str_replace('_', ' ', $log->user->role ?? '-')),
+                'unit'       => optional($log->user->unit)->nama ?? '-',
+                'unit_kerja' => optional($log->user->unit)->nama ?? '-',
+                'aktivitas'  => $log->description ?? '-',
+            ];
+        });
+
+        // ✅ return array langsung (bukan { data: [...] }) agar blade JS bisa baca langsung
+        return response()->json($data->values());
     }
 }

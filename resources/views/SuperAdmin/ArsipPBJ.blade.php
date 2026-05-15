@@ -503,12 +503,12 @@
             <div class="hist-col">Unit Kerja</div>
             <div class="hist-col">Aktivitas</div>
           </div>
-          <div id="histTableBody">
-            <div class="hist-loading" id="histLoading">
-              <div class="hist-spinner"></div><span>Memuat data...</span>
-            </div>
-            <div class="hist-empty" id="histEmpty" hidden>Tidak ada histori aktivitas.</div>
+          {{-- Loading & empty di LUAR histTableBody agar tidak ikut terhapus saat clear rows --}}
+          <div class="hist-loading" id="histLoading" style="display:none;">
+            <div class="hist-spinner"></div><span>Memuat data...</span>
           </div>
+          <div class="hist-empty" id="histEmpty" style="display:none;">Tidak ada histori aktivitas.</div>
+          <div id="histTableBody"></div>
         </div>
       </div>
     </div>
@@ -1721,6 +1721,23 @@
       line-height: 1.45;
     }
 
+    /* Dokumen card – preview + download */
+    .dt-doc-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .dt-doc-dl {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .dt-doc-dl:hover {
+      background: #e2e8f0;
+      color: #184f61;
+    }
+
     .hist-loading {
       display: flex;
       align-items: center;
@@ -1903,25 +1920,43 @@
         Object.keys(docs).forEach(grp => {
           const arr = Array.isArray(docs[grp]) ? docs[grp] : [];
           arr.forEach(doc => {
-            let fileUrl = '',
-              fileName = '-';
+            let previewUrl = '',
+              fileName = '-',
+              label = grp || 'Dokumen';
+
             if (typeof doc === 'string') {
-              fileUrl = normalizeStorageUrl(doc);
+              // fallback: path mentah → normalize ke /storage/...
+              previewUrl = normalizeStorageUrl(doc);
               fileName = doc.split('/').filter(Boolean).pop() || 'Dokumen';
             } else {
-              fileUrl = normalizeStorageUrl(doc.url || doc.path || '');
-              fileName = doc.name || doc.label || (fileUrl.split('/').filter(Boolean).pop() || 'Dokumen');
+              // Controller sudah sediakan doc.url = route('superadmin.arsip.dokumen.show', ...)
+              // URL ini akan serve inline (PDF/gambar) atau attachment otomatis via controller
+              previewUrl = doc.url || normalizeStorageUrl(doc.path || '');
+              fileName = doc.name || (previewUrl.split('/').filter(Boolean).pop() || 'Dokumen');
+              label = doc.label || grp || 'Dokumen';
             }
+
+            // Deteksi tipe file untuk ikon
+            const ext = fileName.split('.').pop()?.toLowerCase() || '';
+            let fileIc = 'bi-file-earmark-text';
+            if (ext === 'pdf') fileIc = 'bi-file-earmark-pdf';
+            else if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) fileIc = 'bi-file-earmark-image';
+            else if (['doc', 'docx'].includes(ext)) fileIc = 'bi-file-earmark-word';
+            else if (['xls', 'xlsx'].includes(ext)) fileIc = 'bi-file-earmark-excel';
+
             total++;
             const card = document.createElement('div');
             card.className = 'dt-doc-card';
             card.innerHTML = `
-          <div class="dt-doc-ic"><i class="bi bi-file-earmark-text"></i></div>
+          <div class="dt-doc-ic"><i class="bi ${fileIc}"></i></div>
           <div class="dt-doc-info">
-            <div class="dt-doc-title">${grp||'Dokumen'}</div>
+            <div class="dt-doc-title">${label}</div>
             <div class="dt-doc-sub">${fileName}</div>
           </div>
-          <a class="dt-doc-act" href="${fileUrl}" target="_blank" rel="noopener"><i class="bi bi-eye"></i></a>
+          <div class="dt-doc-actions">
+            <a class="dt-doc-act" href="${previewUrl}" target="_blank" rel="noopener" title="Preview"><i class="bi bi-eye"></i></a>
+            <a class="dt-doc-act dt-doc-dl" href="${previewUrl}" download="${fileName}" title="Download"><i class="bi bi-download"></i></a>
+          </div>
         `;
             dtDocList.appendChild(card);
           });
@@ -2082,61 +2117,23 @@
       });
 
       /* Histori */
+      /* Histori */
+      const histBtn = document.getElementById('apHistoriBtn');
       const histOverlay = document.getElementById('histOverlay');
+      const histBackdrop = document.getElementById('histBackdrop');
       const histBackBtn = document.getElementById('histBackBtn');
       const histTableBody = document.getElementById('histTableBody');
       const histLoading = document.getElementById('histLoading');
       const histEmpty = document.getElementById('histEmpty');
       const histExportBtn = document.getElementById('histExportBtn');
+
       let histData = [];
-
-      function renderHistoriRows(data) {
-        histTableBody.querySelectorAll('.hist-tbl-row').forEach(el => el.remove());
-        if (data.length === 0) {
-          histEmpty.hidden = false;
-          return;
-        }
-        histEmpty.hidden = true;
-        data.forEach(item => {
-          const row = document.createElement('div');
-          row.className = 'hist-tbl-row';
-          row.innerHTML = `
-        <div class="hist-col">${item.waktu||'-'}</div>
-        <div class="hist-col">${item.nama_akun||'-'}</div>
-        <div class="hist-col">${item.role||'-'}</div>
-        <div class="hist-col">${item.unit_kerja||'-'}</div>
-        <div class="hist-col">${item.aktivitas||'-'}</div>
-      `;
-          histTableBody.appendChild(row);
-        });
-      }
-
-      async function loadHistori() {
-        histLoading.hidden = false;
-        histEmpty.hidden = true;
-        histTableBody.querySelectorAll('.hist-tbl-row').forEach(el => el.remove());
-        try {
-          const res = await fetch('/super-admin/histori', {
-            headers: {
-              'Accept': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            }
-          });
-          if (!res.ok) throw new Error();
-          const json = await res.json();
-          histData = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
-        } catch (err) {
-          histData = [];
-        }
-        histLoading.hidden = true;
-        renderHistoriRows(histData);
-      }
 
       function openHistori() {
         histOverlay.classList.add('is-open');
         histOverlay.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+
         loadHistori();
       }
 
@@ -2146,37 +2143,117 @@
         document.body.style.overflow = '';
       }
 
-      document.getElementById('apHistoriBtn')?.addEventListener('click', openHistori);
+      histBtn?.addEventListener('click', openHistori);
       histBackBtn?.addEventListener('click', closeHistori);
-      document.getElementById('histBackdrop')?.addEventListener('click', closeHistori);
+      histBackdrop?.addEventListener('click', closeHistori);
 
-      histExportBtn?.addEventListener('click', function() {
-        if (typeof XLSX === 'undefined' || histData.length === 0) {
-          alert('Tidak ada data histori.');
+      function histShowLoading(show) {
+        if (!histLoading) return;
+        histLoading.style.display = show ? 'flex' : 'none';
+      }
+
+      function histShowEmpty(show, msg) {
+        if (!histEmpty) return;
+        histEmpty.style.display = show ? 'block' : 'none';
+        if (msg) histEmpty.textContent = msg;
+      }
+
+      async function loadHistori() {
+
+        histShowLoading(true);
+        histShowEmpty(false);
+
+        histTableBody
+          .querySelectorAll('.hist-tbl-row')
+          .forEach(el => el.remove());
+
+        try {
+
+          const res = await fetch('/super-admin/histori', {
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+          });
+
+          if (!res.ok) {
+            throw new Error('HTTP ' + res.status + ' – Gagal mengambil histori');
+          }
+
+          const json = await res.json();
+
+          histData = Array.isArray(json.data) ?
+            json.data :
+            (Array.isArray(json) ? json : []);
+
+          histShowLoading(false);
+
+          if (histData.length === 0) {
+            histShowEmpty(true, 'Tidak ada histori aktivitas.');
+            return;
+          }
+
+          renderHistoriRows(histData);
+
+        } catch (err) {
+
+          console.error('[Histori]', err);
+          histShowLoading(false);
+          histShowEmpty(true, 'Gagal memuat histori: ' + (err?.message || 'error tidak diketahui'));
+        }
+      }
+
+      function renderHistoriRows(rows) {
+
+        histTableBody
+          .querySelectorAll('.hist-tbl-row')
+          .forEach(el => el.remove());
+
+        rows.forEach(item => {
+
+          const row = document.createElement('div');
+
+          row.className = 'hist-tbl-row';
+
+          row.innerHTML = `
+      <div class="hist-col">${item.waktu ?? '-'}</div>
+      <div class="hist-col">${item.nama_akun ?? item.nama ?? '-'}</div>
+      <div class="hist-col">${item.role ?? '-'}</div>
+      <div class="hist-col">${item.unit_kerja ?? item.unit ?? '-'}</div>
+      <div class="hist-col">${item.aktivitas ?? '-'}</div>
+    `;
+
+          histTableBody.appendChild(row);
+        });
+      }
+
+      /* Export histori excel */
+      histExportBtn?.addEventListener('click', () => {
+
+        if (!histData.length) {
+          alert('Tidak ada histori untuk diekspor.');
           return;
         }
-        const ws = XLSX.utils.json_to_sheet(histData.map(d => ({
-          'Waktu': d.waktu || '-',
-          'Nama Akun': d.nama_akun || '-',
-          'Role': d.role || '-',
-          'Unit Kerja': d.unit_kerja || '-',
-          'Aktivitas': d.aktivitas || '-'
-        })));
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Histori');
-        const now = new Date(),
-          pad = n => String(n).padStart(2, '0');
-        XLSX.writeFile(wb, `Histori_${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}.xlsx`);
-      });
 
-      /* Toast */
-      const ntToast = document.getElementById('ntToast');
-      const ntClose = document.getElementById('ntCloseBtn');
-      if (ntToast) {
-        const close = () => ntToast.parentElement?.remove();
-        ntClose?.addEventListener('click', close);
-        setTimeout(close, 4000);
-      }
+        const exportData = histData.map(item => ({
+          "Waktu": item.waktu ?? '-',
+          "Nama Akun": item.nama_akun ?? item.nama ?? '-',
+          "Role": item.role ?? '-',
+          "Unit Kerja": item.unit_kerja ?? item.unit ?? '-',
+          "Aktivitas": item.aktivitas ?? '-',
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Histori Aktivitas');
+
+        XLSX.writeFile(
+          wb,
+          `Histori_Aktivitas_${new Date().toISOString().slice(0,10)}.xlsx`
+        );
+      });
     });
   </script>
   @include('Partials.chatbot')

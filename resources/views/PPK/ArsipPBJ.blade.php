@@ -6,97 +6,89 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Arsip PBJ - SIAPABAJA</title>
+
   <meta name="csrf-token" content="{{ csrf_token() }}">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ asset('css/Unit.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body class="dash-body page-arsip">
+
   @php
+  $unitName = auth()->user()->name ?? 'Unit Kerja';
+
   if (!isset($arsips) || !($arsips instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)) {
   throw new \RuntimeException('Variable $arsips (paginator) tidak dikirim dari controller.');
   }
 
-  $unitName = auth()->user()->name ?? "PPK";
+  $selectedStatus = request()->query('status', 'Semua');
+  $selectedYear = request()->query('tahun', 'Semua');
+  $selectedQ = request()->query('q', '');
 
-  $initialQ = (string) request()->query('q', '');
-  $initialUnit = (string) request()->query('unit', 'Semua');
-  $initialStatus = (string) request()->query('status', 'Semua');
-  $initialTahun = (string) request()->query('tahun', 'Semua');
-
-  $initialSortNilai = request()->query('sort_nilai');
-  $initialSortNilai = is_null($initialSortNilai) ? null : strtolower(trim((string)$initialSortNilai));
-  if ($initialSortNilai !== null && !in_array($initialSortNilai, ['asc','desc'], true)) {
-  $initialSortNilai = null;
+  $initialSortNilai = strtolower((string) request()->query('sort_nilai', ''));
+  if (!in_array($initialSortNilai, ['asc', 'desc'], true)) {
+  $initialSortNilai = '';
   }
 
-  $initialUnitNorm = trim(mb_strtolower($initialUnit, 'UTF-8'));
-  $initialStatusNorm = trim(mb_strtolower($initialStatus, 'UTF-8'));
-  $initialTahunNorm = trim((string)$initialTahun);
+  $rows = collect($arsips->items())->map(function ($item) use ($unitName) {
+  $r = is_array($item) ? $item : (array) $item;
 
-  $rows = collect($arsips->items())->map(function($item) use ($unitName){
-  $r = is_array($item) ? $item : (method_exists($item, 'toArray') ? $item->toArray() : (array) $item);
-
-  // doc note dari dokumen_tidak_dipersyaratkan
-  $rawE = $r["dokumen_tidak_dipersyaratkan"] ?? null;
+  $rawE = $r['dokumen_tidak_dipersyaratkan'] ?? ($r['kolom_e'] ?? ($r['doc_note'] ?? null));
   $docNote = null;
+
   if (is_array($rawE) && count($rawE) > 0) {
   $docNote = implode(', ', array_map(fn($x) => is_string($x) ? $x : json_encode($x), $rawE));
-  } elseif (is_string($rawE) && trim($rawE) !== '') {
-  $docNote = trim($rawE);
+  } else {
+  $eVal = is_string($rawE) ? trim($rawE) : $rawE;
+  if (
+  $eVal === true || $eVal === 1 || $eVal === '1' ||
+  (is_string($eVal) && in_array(strtolower($eVal), ['ya', 'iya', 'true', 'yes'], true))
+  ) {
+  $docNote = 'Dokumen pada Kolom E bersifat opsional (tidak dipersyaratkan).';
+  } elseif (is_string($eVal) && $eVal !== '') {
+  $docNote = $eVal;
   }
-
-  // dokumen
-  $dokumen = $r["dokumen"] ?? [];
-  if (is_string($dokumen)) {
-  $decoded = json_decode($dokumen, true);
-  $dokumen = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
   }
-  if (empty($dokumen)) $dokumen = [];
 
   return [
-  "id" => $r["id"]
-  ?? $r["arsip_id"]
-  ?? $r["pbj_id"]
-  ?? null,
-  "tahun" => (string)($r["tahun"] ?? ""),
-  "unit" => $r["unit"] ?? ($r["nama_unit"] ?? ($r["unit_kerja"] ?? $unitName)),
-  "pekerjaan" => $r["pekerjaan"] ?? ($r["nama_pekerjaan"] ?? ($r["judul"] ?? "-")),
-  "metode_pbj" => $r["metode_pbj"] ?? ($r["jenis_pengadaan"] ?? ($r["metode"] ?? "-")),
-  "nilai_kontrak" => $r["nilai_kontrak"] ?? ($r["kontrak"] ?? ($r["nilai"] ?? "-")),
-  "status_arsip" => $r["status_arsip"] ?? "-",
-  "status_pekerjaan" => $r["status_pekerjaan"] ?? ($r["status"] ?? "-"),
-  "idrup" => $r["idrup"] ?? ($r["id_rup"] ?? "-"),
-  "rekanan" => $r["rekanan"] ?? ($r["nama_rekanan"] ?? "-"),
-  "jenis" => $r["jenis"] ?? ($r["jenis_pengadaan"] ?? "-"),
-  "pagu" => $r["pagu"] ?? ($r["pagu_anggaran"] ?? "-"),
-  "hps" => $r["hps"] ?? "-",
-  "dokumen" => $dokumen,
-  "doc_note" => $docNote,
+  'id' => $r['id'] ?? null,
+  'tahun' => (string) ($r['tahun'] ?? ''),
+  'unit' => $r['unit'] ?? $unitName,
+  'pekerjaan' => $r['pekerjaan'] ?? ($r['judul'] ?? '-'),
+  'jenis_pbj' => $r['jenis_pbj'] ?? 'Pengadaan Pekerjaan Konstruksi',
+  'metode_pbj' => $r['metode_pbj'] ?? ($r['metode'] ?? '-'),
+  'nilai_kontrak' => $r['nilai_kontrak'] ?? ($r['kontrak'] ?? ($r['nilai'] ?? '-')),
+  'status_arsip' => $r['status_arsip'] ?? '-',
+  'status_pekerjaan' => $r['status_pekerjaan'] ?? ($r['status'] ?? '-'),
+  'id_rup' => $r['id_rup'] ?? ($r['idrup'] ?? null),
+  'nama_rekanan' => $r['nama_rekanan'] ?? ($r['rekanan'] ?? null),
+  'jenis_pengadaan' => $r['jenis_pengadaan'] ?? ($r['jenis'] ?? null),
+  'pagu_anggaran' => $r['pagu_anggaran'] ?? ($r['pagu'] ?? null),
+  'hps' => $r['hps'] ?? null,
+  'dokumen' => $r['dokumen'] ?? [],
+  'doc_note' => $docNote,
+  'created_by_name' => $r['created_by_name'] ?? null,
   ];
   })->values()->all();
 
-  if (!isset($years) || !is_array($years) || count($years) === 0) {
-  $years = array_values(array_unique(array_filter(array_map(fn($x) => $x['tahun'], $rows))));
-  rsort($years);
-  } else {
-  $years = array_values(array_unique(array_map(fn($t) => (string)$t, $years)));
-  rsort($years);
-  }
+  $years = collect($tahunOptions ?? [])
+  ->filter()
+  ->unique()
+  ->sortDesc()
+  ->values()
+  ->all();
 
-  if (!isset($unitOptions) || !is_array($unitOptions) || count($unitOptions) === 0) {
-  $unitOptions = array_values(array_unique(array_filter(array_map(fn($x) => $x['unit'], $rows))));
+  $unitOptions = array_values(array_unique(array_map(fn($x) => $x['unit'], $rows)));
   sort($unitOptions);
-  } else {
-  $unitOptions = array_values(array_unique(array_map(fn($u) => (string)$u, $unitOptions)));
-  sort($unitOptions);
-  }
+  $lockedUnit = $unitOptions[0] ?? $unitName;
 
-  $deleteUrlTemplate = route('ppk.arsip.delete', ['id' => '__ID__']);
+  $exportUrl = route('unit.arsip.export');
   $qs = request()->except('page');
 
   $toastMessage = session('success')
@@ -119,23 +111,39 @@
           <div class="dash-role">ADMIN (PPK)</div>
         </div>
       </div>
+
+      <div class="dash-unitbox">
+        <div class="dash-unit-label">Unit Kerja :</div>
+        <div class="dash-unit-name">{{ $unitName }}</div>
+      </div>
+
       <nav class="dash-nav">
-        <a class="dash-link {{ request()->routeIs('ppk.dashboard') ? 'active' : '' }}" href="{{ route('ppk.dashboard') }}">
-          <span class="ic"><i class="bi bi-grid-fill"></i></span>Dashboard
+        <a class="dash-link" href="{{ route('ppk.dashboard') }}">
+          <span class="ic"><i class="bi bi-grid-fill"></i></span>
+          Dashboard
         </a>
-        <a class="dash-link {{ request()->routeIs('ppk.arsip*') ? 'active' : '' }}" href="{{ route('ppk.arsip') }}">
-          <span class="ic"><i class="bi bi-archive"></i></span>Arsip PBJ
+        <a class="dash-link active" href="{{ route('ppk.arsip') }}">
+          <span class="ic"><i class="bi bi-archive"></i></span>
+          Arsip PBJ
         </a>
-        <a class="dash-link {{ request()->routeIs('ppk.pengadaan.create') ? 'active' : '' }}" href="{{ route('ppk.pengadaan.create') }}">
-          <span class="ic"><i class="bi bi-plus-square"></i></span>Tambah Pengadaan
+        <a class="dash-link" href="{{ route('ppk.pengadaan.create') }}">
+          <span class="ic"><i class="bi bi-plus-square"></i></span>
+          Tambah Pengadaan
         </a>
-        <a class="dash-link {{ request()->routeIs('ppk.kelola.akun') ? 'active' : '' }}" href="{{ route('ppk.kelola.akun') }}">
-          <span class="ic"><i class="bi bi-person-gear"></i></span>Kelola Akun
+        <a class="dash-link {{ request()->routeIs('ppk.kelola.akun') ? 'active' : '' }}"
+          href="{{ route('ppk.kelola.akun') }}">
+          <span class="ic"><i class="bi bi-person-gear"></i></span>
+          Kelola Akun
         </a>
       </nav>
+
       <div class="dash-side-actions">
-        <a class="dash-side-btn" href="{{ route('home') }}"><i class="bi bi-house-door"></i> Kembali</a>
-        <a class="dash-side-btn" href="{{ url('/logout') }}"><i class="bi bi-box-arrow-right"></i> Keluar</a>
+        <a class="dash-side-btn" href="{{ route('home') }}">
+          <i class="bi bi-house-door"></i> Kembali
+        </a>
+        <a class="dash-side-btn" href="{{ url('/logout') }}">
+          <i class="bi bi-box-arrow-right"></i> Keluar
+        </a>
       </div>
     </aside>
 
@@ -149,14 +157,14 @@
           <p>Kelola arsip pengadaan barang dan jasa Universitas Jenderal Soedirman</p>
         </div>
         <div class="ap-header-right">
-          <button class="ap-export-btn" id="apExportBtn">
+          <button type="button" id="apPrintBtn" class="ap-export-btn" title="Ekspor ke Excel">
             <i class="bi bi-file-earmark-excel"></i> Ekspor Excel
           </button>
         </div>
       </header>
 
       {{-- Toast --}}
-      @if(!empty($toastMessage))
+      @if (!empty($toastMessage))
       <div class="nt-wrap" id="ntWrap" aria-live="polite" aria-atomic="true">
         <div class="nt-toast nt-success" id="ntToast" role="status">
           <div class="nt-ic"><i class="bi bi-check2-circle"></i></div>
@@ -164,7 +172,9 @@
             <div class="nt-title">Berhasil</div>
             <div class="nt-desc">{{ $toastMessage }}</div>
           </div>
-          <button type="button" class="nt-close" id="ntCloseBtn" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+          <button type="button" class="nt-close" id="ntCloseBtn" aria-label="Tutup notifikasi">
+            <i class="bi bi-x-lg"></i>
+          </button>
           <div class="nt-bar" aria-hidden="true"></div>
         </div>
       </div>
@@ -174,40 +184,54 @@
       <section class="ap-filter-bar">
         <div class="ap-search-wrap">
           <i class="bi bi-search ap-search-ic"></i>
-          <input id="apSearchInput" type="text" class="ap-search-input" placeholder="Cari Arsip..." value="{{ $initialQ }}" autocomplete="off" />
+          <input
+            id="apSearchInput"
+            type="text"
+            class="ap-search-input"
+            placeholder="Cari pekerjaan, rekanan, dll..."
+            value="{{ $selectedQ }}"
+            autocomplete="off" />
         </div>
-        <div class="ap-sel-wrap">
+
+        {{-- Unit terkunci (hidden) --}}
+        <div class="ap-sel-wrap" style="display:none;">
           <select id="apUnitFilter" class="ap-sel">
-            <option value="Semua" {{ $initialUnitNorm === 'semua' ? 'selected' : '' }}>Semua Unit</option>
-            @foreach($unitOptions as $u)
-            @php $uNorm = trim(mb_strtolower((string)$u, 'UTF-8')); @endphp
-            <option value="{{ $u }}" {{ $initialUnitNorm === $uNorm ? 'selected' : '' }}>{{ $u }}</option>
-            @endforeach
+            <option value="{{ $lockedUnit }}" selected>{{ $lockedUnit }}</option>
           </select>
         </div>
+
         <div class="ap-sel-wrap">
           <select id="apYearFilter" class="ap-sel">
-            <option value="Semua" {{ ($initialTahunNorm === 'Semua' || $initialTahunNorm === 'semua') ? 'selected' : '' }}>Tahun</option>
-            @foreach($years as $y)
-            <option value="{{ $y }}" {{ $initialTahunNorm === (string)$y ? 'selected' : '' }}>{{ $y }}</option>
+            <option value="Semua" {{ (string) $selectedYear === 'Semua' ? 'selected' : '' }}>Tahun</option>
+            @foreach ($years as $y)
+            <option value="{{ $y }}" {{ (string) $selectedYear === (string) $y ? 'selected' : '' }}>
+              {{ $y }}
+            </option>
             @endforeach
           </select>
         </div>
+
         <div class="ap-sel-wrap">
           <select id="apStatusFilter" class="ap-sel">
-            <option value="Semua" {{ $initialStatusNorm === 'semua' ? 'selected' : '' }}>Status</option>
-            <option value="Publik" {{ $initialStatusNorm === 'publik' ? 'selected' : '' }}>Publik</option>
-            <option value="Privat" {{ $initialStatusNorm === 'privat' ? 'selected' : '' }}>Privat</option>
+            <option value="Semua" {{ $selectedStatus === 'Semua'  ? 'selected' : '' }}>Status</option>
+            <option value="Publik" {{ $selectedStatus === 'Publik' ? 'selected' : '' }}>Publik</option>
+            <option value="Privat" {{ $selectedStatus === 'Privat' ? 'selected' : '' }}>Privat</option>
           </select>
         </div>
+
         <div class="ap-filter-tools">
-          <button type="button" id="apRefreshBtn" class="ap-tool-btn" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
-          <button type="button" id="apHistoriBtn" class="ap-tool-btn" title="Histori Aktivitas"><i class="bi bi-calendar3"></i></button>
+          <button type="button" id="apRefreshBtn" class="ap-tool-btn" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button type="button" id="apHistoryBtn" class="ap-tool-btn" title="Histori">
+            <i class="bi bi-calendar3"></i>
+          </button>
         </div>
       </section>
 
-      {{-- Table --}}
+      {{-- Tabel --}}
       <section class="ap-table-section">
+
         <div class="ap-tbl-head">
           <div class="ap-col ap-col-tahun">Tahun</div>
           <div class="ap-col ap-col-unit">Unit Kerja</div>
@@ -216,16 +240,27 @@
           <div class="ap-col ap-col-nilai">
             <span>Nilai Kontrak</span>
             <button type="button" id="sortNilaiBtn" class="ap-sort-btn" title="Urutkan">
-              <i id="sortNilaiIcon" class="bi @if($initialSortNilai === 'asc') bi-sort-up @elseif($initialSortNilai === 'desc') bi-sort-down-alt @else bi-arrow-down-up @endif"></i>
+              <i id="sortNilaiIcon" class="bi
+                            @if ($initialSortNilai === 'asc')   bi-sort-up
+                            @elseif ($initialSortNilai === 'desc') bi-sort-down-alt
+                            @else bi-arrow-down-up
+                            @endif
+                        "></i>
             </button>
           </div>
           <div class="ap-col ap-col-status">Status Pekerjaan</div>
           <div class="ap-col ap-col-aksi">Aksi</div>
         </div>
 
-        @foreach($rows as $r)
+        @if (empty($rows))
+        <div class="ap-empty">
+          <i class="bi bi-inbox"></i>
+          <p>Belum ada data arsip untuk unit ini.</p>
+        </div>
+        @else
+        @foreach ($rows as $r)
         @php
-        $sp = strtolower(trim((string)($r['status_pekerjaan'] ?? '')));
+        $sp = strtolower(trim((string) ($r['status_pekerjaan'] ?? '')));
         $spClass = match ($sp) {
         'perencanaan' => 'sp-badge sp-plan',
         'pemilihan' => 'sp-badge sp-select',
@@ -233,23 +268,37 @@
         'selesai' => 'sp-badge sp-done',
         default => 'sp-badge',
         };
-        $nilaiRaw = preg_replace('/[^\d]/', '', (string)($r['nilai_kontrak'] ?? ''));
+
+        $pekerjaanRaw = (string) ($r['pekerjaan'] ?? '');
+        $parts = array_map('trim', explode('|', $pekerjaanRaw, 2));
+        $namaPekerjaan = $parts[0] ?: ($r['nama_pekerjaan'] ?? '-');
+        $idrupValue = $r['id_rup'] ?? ($parts[1] ?? '-');
+        $rekananValue = $r['nama_rekanan'] ?? '-';
+        $docsValue = $r['dokumen'] ?? [];
+        $createdByName = $r['created_by_name'] ?? null;
+
+        $nilaiRaw = preg_replace('/[^\d]/', '', (string) ($r['nilai_kontrak'] ?? ''));
         $nilaiRaw = $nilaiRaw === '' ? '0' : $nilaiRaw;
         @endphp
 
         <div class="ap-tbl-row"
-          data-status="{{ trim((string)($r['status_arsip'] ?? '-')) }}"
-          data-year="{{ trim((string)($r['tahun'] ?? '')) }}"
-          data-unit="{{ trim((string)($r['unit'] ?? '')) }}"
+          data-status="{{ trim((string) ($r['status_arsip'] ?? '-')) }}"
+          data-year="{{ trim((string) ($r['tahun'] ?? '')) }}"
+          data-unit="{{ trim((string) ($r['unit'] ?? '')) }}"
           data-moneyraw="{{ $nilaiRaw }}">
 
           <div class="ap-col ap-col-tahun">{{ $r['tahun'] }}</div>
           <div class="ap-col ap-col-unit">{{ $r['unit'] }}</div>
-          <div class="ap-col ap-col-job">{{ $r['pekerjaan'] }}</div>
+          <div class="ap-col ap-col-job">
+            {{ $namaPekerjaan }}
+          </div>
+
           <div class="ap-col ap-col-metode">
             <span class="metode-badge">{{ $r['metode_pbj'] !== '-' ? $r['metode_pbj'] : '-' }}</span>
           </div>
+
           <div class="ap-col ap-col-nilai">{{ $r['nilai_kontrak'] }}</div>
+
           <div class="ap-col ap-col-status">
             <span class="{{ $spClass }}">{{ $r['status_pekerjaan'] }}</span>
           </div>
@@ -258,41 +307,39 @@
             <button type="button"
               class="aksi-btn aksi-info js-open-detail"
               title="Detail"
-              data-title="{{ $r['pekerjaan'] }}"
+              data-id="{{ $r['id'] }}"
+              data-title="{{ $namaPekerjaan }}"
               data-unit="{{ $r['unit'] }}"
               data-tahun="{{ $r['tahun'] }}"
-              data-idrup="{{ $r['idrup'] }}"
+              data-idrup="{{ $idrupValue }}"
               data-status="{{ $r['status_pekerjaan'] }}"
-              data-rekanan="{{ $r['rekanan'] }}"
-              data-jenis="{{ $r['jenis'] }}"
-              data-metode="{{ $r['metode_pbj'] }}"
-              data-pagu="{{ $r['pagu'] }}"
-              data-hps="{{ $r['hps'] }}"
+              data-rekanan="{{ $rekananValue }}"
+              data-jenis="{{ $r['jenis_pengadaan'] ?? '-' }}"
+              data-metode="{{ $r['metode_pbj'] ?? '-' }}"
+              data-pagu="{{ $r['pagu_anggaran'] ?? '-' }}"
+              data-hps="{{ $r['hps'] ?? '-' }}"
               data-kontrak="{{ $r['nilai_kontrak'] }}"
               data-docnote="{{ $r['doc_note'] ?? '' }}"
-              data-docs='@json($r["dokumen"] ?? [])'>
+              data-createdby="{{ $createdByName ?? '' }}"
+              data-docs='@json($docsValue)'>
               <i class="bi bi-info-circle-fill"></i>
             </button>
-            @if(!empty($r['id']))
-            <a href="{{ route('ppk.arsip.edit', ['id' => $r['id']]) }}"
-              class="aksi-btn aksi-edit"
-              title="Edit">
+
+            <a href="/ppk/arsip/{{ $r['id'] }}/edit"
+              class="aksi-btn aksi-edit" title="Edit">
               <i class="bi bi-pencil-fill"></i>
             </a>
-            @else
+
             <button type="button"
-              class="aksi-btn aksi-edit"
-              disabled
-              title="ID tidak ditemukan">
-              <i class="bi bi-pencil-fill"></i>
-            </button>
-            @endif
-            <button type="button" class="aksi-btn aksi-delete js-single-delete" title="Hapus" data-id="{{ $r['id'] }}">
+              class="aksi-btn aksi-delete js-single-delete"
+              title="Hapus"
+              data-id="{{ $r['id'] }}">
               <i class="bi bi-trash3-fill"></i>
             </button>
           </div>
         </div>
         @endforeach
+        @endif
 
         {{-- Pagination --}}
         <div class="ap-pagination-wrap">
@@ -300,6 +347,7 @@
             Halaman {{ $arsips->currentPage() }} dari {{ $arsips->lastPage() }}
             &bull; Menampilkan {{ $arsips->count() }} dari {{ $arsips->total() }} data
           </div>
+
           <div class="ap-pagination">
             @php
             $current = $arsips->currentPage();
@@ -309,21 +357,32 @@
             $prevHref = $arsips->onFirstPage() ? '#' : $arsips->appends($qs)->url($current - 1);
             $nextHref = $arsips->hasMorePages() ? $arsips->appends($qs)->url($current + 1) : '#';
             @endphp
-            <a class="ap-page-btn {{ $arsips->onFirstPage() ? 'is-disabled' : '' }}" href="{{ $prevHref }}"><i class="bi bi-chevron-left"></i></a>
-            @if($start > 1)
+
+            <a class="ap-page-btn {{ $arsips->onFirstPage() ? 'is-disabled' : '' }}" href="{{ $prevHref }}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+
+            @if ($start > 1)
             <a class="ap-page-btn" href="{{ $arsips->appends($qs)->url(1) }}">1</a>
-            @if($start > 2)<span class="ap-page-btn is-ellipsis">…</span>@endif
+            @if ($start > 2)<span class="ap-page-btn is-ellipsis">…</span>@endif
             @endif
-            @for($i = $start; $i <= $end; $i++)
-              <a class="ap-page-btn {{ $i === $current ? 'is-active' : '' }}" href="{{ $arsips->appends($qs)->url($i) }}">{{ $i }}</a>
+
+            @for ($i = $start; $i <= $end; $i++)
+              <a class="ap-page-btn {{ $i === $current ? 'is-active' : '' }}"
+              href="{{ $arsips->appends($qs)->url($i) }}">{{ $i }}</a>
               @endfor
-              @if($end < $last)
-                @if($end < $last - 1)<span class="ap-page-btn is-ellipsis">…</span>@endif
+
+              @if ($end < $last)
+                @if ($end < $last - 1)<span class="ap-page-btn is-ellipsis">…</span>@endif
                 <a class="ap-page-btn" href="{{ $arsips->appends($qs)->url($last) }}">{{ $last }}</a>
                 @endif
-                <a class="ap-page-btn {{ $arsips->hasMorePages() ? '' : 'is-disabled' }}" href="{{ $nextHref }}"><i class="bi bi-chevron-right"></i></a>
+
+                <a class="ap-page-btn {{ $arsips->hasMorePages() ? '' : 'is-disabled' }}" href="{{ $nextHref }}">
+                  <i class="bi bi-chevron-right"></i>
+                </a>
           </div>
         </div>
+
       </section>
     </main>
   </div>
@@ -333,7 +392,6 @@
     <div class="dt-backdrop" data-close="true"></div>
     <div class="dt-panel" role="dialog" aria-modal="true" aria-labelledby="dtTitle">
       <div class="dt-card">
-
         <div class="dt-topbar">
           <button type="button" class="dt-back-btn" id="dtCloseBtn" aria-label="Kembali">
             <i class="bi bi-chevron-left"></i> Kembali
@@ -409,6 +467,7 @@
           <div class="dt-section-title">Dokumen Pengadaan</div>
           <div class="dt-doc-grid" id="dtDocList"></div>
           <div class="dt-doc-empty" id="dtDocEmpty" hidden>Tidak ada dokumen yang diupload.</div>
+
           <div class="dt-doc-note" id="dtDocNoteWrap" hidden>
             <div class="dt-doc-note-ic"><i class="bi bi-info-circle"></i></div>
             <div class="dt-doc-note-txt">
@@ -428,7 +487,9 @@
       <div class="cf-card">
         <div class="cf-top">
           <div class="cf-badge"><i class="bi bi-shield-exclamation"></i></div>
-          <button type="button" class="cf-close" id="cfCloseBtn" aria-label="Tutup"><i class="bi bi-x-lg"></i></button>
+          <button type="button" class="cf-close" id="cfCloseBtn" aria-label="Tutup">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
         <div class="cf-body">
           <div class="cf-title" id="cfTitle">Konfirmasi Hapus</div>
@@ -449,9 +510,13 @@
     <div class="hist-backdrop" id="histBackdrop"></div>
     <div class="hist-panel" role="dialog" aria-modal="true" aria-labelledby="histTitle">
       <div class="hist-topbar">
-        <button type="button" class="hist-back" id="histBackBtn"><i class="bi bi-chevron-left"></i> Kembali</button>
+        <button type="button" class="hist-back" id="histBackBtn">
+          <i class="bi bi-chevron-left"></i> Kembali
+        </button>
         <div class="hist-topbar-right">
-          <button type="button" class="hist-export-btn" id="histExportBtn" title="Export ke Excel"><i class="bi bi-clipboard2-pulse"></i></button>
+          <button type="button" class="hist-export-btn" id="histExportBtn" title="Export Histori ke Excel">
+            <i class="bi bi-clipboard2-pulse"></i>
+          </button>
         </div>
       </div>
       <div class="hist-body">
@@ -466,12 +531,11 @@
             <div class="hist-col">Unit Kerja</div>
             <div class="hist-col">Aktivitas</div>
           </div>
-          <div id="histTableBody">
-            <div class="hist-loading" id="histLoading">
-              <div class="hist-spinner"></div><span>Memuat data...</span>
-            </div>
-            <div class="hist-empty" id="histEmpty" hidden>Tidak ada histori aktivitas.</div>
+          <div class="hist-loading" id="histLoading" hidden>
+            <div class="hist-spinner"></div><span>Memuat data...</span>
           </div>
+          <div class="hist-empty" id="histEmpty" hidden>Tidak ada histori aktivitas.</div>
+          <div id="histTableBody"></div>
         </div>
       </div>
     </div>
@@ -479,6 +543,13 @@
 
   <style>
     :root {
+      --sidebar-bg: #184f61;
+      --sidebar-hover: rgba(255, 255, 255, .07);
+      --sidebar-active-bg: #f6c100;
+      --sidebar-active-txt: #184f61;
+      --sidebar-txt: rgba(255, 255, 255, .75);
+      --sidebar-brand-txt: #fff;
+      --sidebar-role-txt: rgba(255, 255, 255, .55);
       --yellow: #f6c100;
       --yellow-dark: #d9aa00;
       --navy: #184f61;
@@ -496,16 +567,21 @@
     }
 
     .dash-wrap {
+      display: flex;
+      min-height: 100vh;
       background: #f4f7fa;
     }
 
     .dash-main {
+      flex: 1;
+      min-width: 0;
       padding: 28px 28px 40px;
       display: flex;
       flex-direction: column;
       gap: 20px;
     }
 
+    /* Header */
     .ap-header {
       width: 100%;
       display: flex;
@@ -569,6 +645,7 @@
       cursor: not-allowed;
     }
 
+    /* Filter Bar */
     .ap-filter-bar {
       display: flex;
       align-items: center;
@@ -674,6 +751,7 @@
       border-color: var(--navy);
     }
 
+    /* Table */
     .ap-table-section {
       background: #fff;
       border: 1px solid var(--border);
@@ -816,6 +894,22 @@
       box-sizing: border-box;
     }
 
+    /* Badge arsip yang ditambahkan oleh PPK */
+    .ppk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid #bfdbfe;
+      white-space: nowrap;
+    }
+
     .sp-badge {
       display: inline-flex;
       align-items: center;
@@ -846,6 +940,24 @@
     .sp-done {
       background: #dcfce7;
       color: #15803d;
+    }
+
+    /* Empty state */
+    .ap-empty {
+      padding: 48px;
+      text-align: center;
+      color: #94a3b8;
+    }
+
+    .ap-empty i {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .ap-empty p {
+      margin: 0;
+      font-size: 14px;
     }
 
     .aksi-btn {
@@ -887,6 +999,7 @@
       color: #dc2626;
     }
 
+    /* Pagination */
     .ap-pagination-wrap {
       display: flex;
       align-items: center;
@@ -1021,7 +1134,6 @@
     .dt-status-badge {
       display: inline-flex;
       align-items: center;
-      justify-content: left;
       padding: 5px 14px;
       border-radius: 8px;
       font-size: 13px;
@@ -1210,6 +1322,25 @@
       color: inherit;
       flex: 0 0 auto;
       font-size: 15px;
+      transition: .15s;
+    }
+
+    .dt-doc-act-view:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .dt-doc-act-dl:hover {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #15803d;
+    }
+
+    .dt-doc-acts {
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
     }
 
     .dt-doc-empty {
@@ -1650,6 +1781,11 @@
       font-size: 14px;
     }
 
+    .hist-loading[hidden],
+    .hist-empty[hidden] {
+      display: none !important;
+    }
+
     .hist-spinner {
       width: 20px;
       height: 20px;
@@ -1699,444 +1835,550 @@
       .dash-main {
         padding: 16px;
       }
-
-      .ap-filter-bar {
-        flex-wrap: wrap;
-      }
     }
   </style>
-  <script>
-    window.deleteUrlTemplate = "{{ $deleteUrlTemplate }}";
-    window.lastPageValue = "{{ $arsips->lastPage() }}";
-  </script>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
 
-          const searchInput = document.getElementById('apSearchInput');
-          const unitFilter = document.getElementById('apUnitFilter');
-          const statusFilter = document.getElementById('apStatusFilter');
-          const yearFilter = document.getElementById('apYearFilter');
-          const refreshBtn = document.getElementById('apRefreshBtn');
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const filterEl = document.getElementById('apStatusFilter');
+      const yearEl = document.getElementById('apYearFilter');
+      const searchEl = document.getElementById('apSearchInput');
+      const refreshBtn = document.getElementById('apRefreshBtn');
+      const printBtn = document.getElementById('apPrintBtn');
 
-          const dtModal = document.getElementById('dtModal');
-          const dtCloseBtn = document.getElementById('dtCloseBtn');
-          const dtTitle = document.getElementById('dtTitle');
-          const dtUnit = document.getElementById('dtUnit');
-          const dtTahun = document.getElementById('dtTahun');
-          const dtIdRup = document.getElementById('dtIdRup');
-          const dtRekanan = document.getElementById('dtRekanan');
-          const dtJenis = document.getElementById('dtJenis');
-          const dtMetode = document.getElementById('dtMetode');
-          const dtPagu = document.getElementById('dtPagu');
-          const dtHps = document.getElementById('dtHps');
-          const dtKontrak = document.getElementById('dtKontrak');
-          const dtDocList = document.getElementById('dtDocList');
-          const dtDocEmpty = document.getElementById('dtDocEmpty');
-          const dtDocNoteWrap = document.getElementById('dtDocNoteWrap');
-          const dtDocNote = document.getElementById('dtDocNote');
-          const cfModal = document.getElementById('cfModal');
-          const cfCancelBtn = document.getElementById('cfCancelBtn');
-          const cfCloseBtn = document.getElementById('cfCloseBtn');
-          const cfConfirmBtn = document.getElementById('cfConfirmBtn');
+      const baseUrl = "{{ url('/ppk/arsip') }}";
 
-          /* Filter server-side */
-          function applyServerFilter() {
-            const url = new URL(window.location.href);
-            const q = searchInput?.value?.trim() || '';
-            const unit = unitFilter?.value || 'Semua';
-            const status = statusFilter?.value || 'Semua';
-            const tahun = yearFilter?.value || 'Semua';
-            if (q) url.searchParams.set('q', q);
-            else url.searchParams.delete('q');
-            if (unit !== 'Semua') url.searchParams.set('unit', unit);
-            else url.searchParams.delete('unit');
-            if (status !== 'Semua') url.searchParams.set('status', status);
-            else url.searchParams.delete('status');
-            if (tahun !== 'Semua') url.searchParams.set('tahun', tahun);
-            else url.searchParams.delete('tahun');
-            url.searchParams.delete('page');
-            window.location.href = url.toString();
+      const lastPage = Number("{{ $arsips->lastPage() }}");
+
+      /* -------- Toast -------- */
+      const ntToast = document.getElementById('ntToast');
+      const ntClose = document.getElementById('ntCloseBtn');
+      if (ntToast) {
+        const close = () => ntToast.parentElement?.remove();
+        ntClose?.addEventListener('click', close);
+        setTimeout(close, 4000);
+      }
+
+      /* -------- Server-side filter -------- */
+      let navTimer = null;
+
+      function getCurrentSortNilai() {
+        try {
+          const s = (new URL(window.location.href).searchParams.get('sort_nilai') || '').toLowerCase();
+          return (s === 'asc' || s === 'desc') ? s : '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function applyServerFilter() {
+        const url = new URL(baseUrl, window.location.origin);
+        const status = filterEl?.value || 'Semua';
+        const year = yearEl?.value || 'Semua';
+        const q = (searchEl?.value || '').trim();
+
+        if (status !== 'Semua') url.searchParams.set('status', status);
+        if (year !== 'Semua') url.searchParams.set('tahun', year);
+        if (q) url.searchParams.set('q', q);
+
+        const s = getCurrentSortNilai();
+        if (s) url.searchParams.set('sort_nilai', s);
+
+        url.searchParams.delete('page');
+        if (url.toString() !== window.location.href) window.location.href = url.toString();
+      }
+
+      function scheduleNavigate(delay = 150) {
+        clearTimeout(navTimer);
+        navTimer = setTimeout(applyServerFilter, delay);
+      }
+
+      filterEl?.addEventListener('change', () => scheduleNavigate(150));
+      yearEl?.addEventListener('change', () => scheduleNavigate(150));
+
+      if (searchEl) {
+        searchEl.addEventListener('input', () => scheduleNavigate(700));
+        searchEl.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            scheduleNavigate(0);
           }
+        });
+      }
 
-          searchInput?.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              applyServerFilter();
-            }
-          });
-          unitFilter?.addEventListener('change', applyServerFilter);
-          statusFilter?.addEventListener('change', applyServerFilter);
-          yearFilter?.addEventListener('change', applyServerFilter);
-          refreshBtn?.addEventListener('click', () => {
-            const u = new URL(window.location.href);
-            u.search = '';
-            window.location.href = u.toString();
-          });
+      refreshBtn?.addEventListener('click', () => {
+        const u = new URL(window.location.href);
+        u.search = '';
+        window.location.href = u.toString();
+      });
 
-          /* Sort nilai */
-          document.getElementById('sortNilaiBtn')?.addEventListener('click', function() {
-            const url = new URL(window.location.href);
-            const cur = url.searchParams.get('sort_nilai');
-            if (cur === 'asc') url.searchParams.set('sort_nilai', 'desc');
-            else if (cur === 'desc') url.searchParams.delete('sort_nilai');
-            else url.searchParams.set('sort_nilai', 'asc');
-            url.searchParams.delete('page');
-            window.location.href = url.toString();
-          });
+      /* -------- Sort Nilai -------- */
+      document.getElementById('sortNilaiBtn')?.addEventListener('click', function() {
+        const url = new URL(window.location.href);
+        const cur = getCurrentSortNilai();
+        const next = cur === '' ? 'desc' : cur === 'desc' ? 'asc' : '';
 
-          /* Detail Modal */
-          function normalizeStorageUrl(path) {
-            if (!path) return '#';
-            let s = String(path).trim().replace(/\\/g, '/');
-            if (s.startsWith('http')) return s;
-            if (s.startsWith('/storage/')) return s;
-            return '/storage/' + s.replace(/^\/+/, '');
-          }
+        if (next) url.searchParams.set('sort_nilai', next);
+        else url.searchParams.delete('sort_nilai');
 
-          function openDetail(data) {
-            dtTitle.textContent = data.title || '-';
-            dtUnit.textContent = data.unit || '-';
-            dtTahun.textContent = data.tahun || '-';
-            dtIdRup.textContent = data.idrup || '-';
-            dtRekanan.textContent = data.rekanan || '-';
-            dtJenis.textContent = data.jenis || '-';
-            dtMetode.textContent = data.metode || '-';
-            dtPagu.textContent = data.pagu || '-';
-            dtHps.textContent = data.hps || '-';
-            dtKontrak.textContent = data.kontrak || '-';
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+      });
 
-            // Badge status
-            const badge = document.getElementById('dtStatusBadge');
-            if (badge) {
-              const sp = (data.status || '').toLowerCase().trim();
-              badge.textContent = data.status || '';
-              badge.className = 'dt-status-badge';
-              if (sp === 'perencanaan') badge.classList.add('sp-plan');
-              else if (sp === 'pemilihan') badge.classList.add('sp-select');
-              else if (sp === 'pelaksanaan') badge.classList.add('sp-do');
-              else if (sp === 'selesai') badge.classList.add('sp-done');
-              badge.hidden = !data.status;
-            }
+      /* -------- Detail Modal -------- */
+      const dtModal = document.getElementById('dtModal');
+      const dtCloseBtn = document.getElementById('dtCloseBtn');
+      const dtTitle = document.getElementById('dtTitle');
+      const dtUnit = document.getElementById('dtUnit');
+      const dtTahun = document.getElementById('dtTahun');
+      const dtIdRup = document.getElementById('dtIdRup');
+      const dtRekanan = document.getElementById('dtRekanan');
+      const dtJenis = document.getElementById('dtJenis');
+      const dtMetode = document.getElementById('dtMetode');
+      const dtPagu = document.getElementById('dtPagu');
+      const dtHps = document.getElementById('dtHps');
+      const dtKontrak = document.getElementById('dtKontrak');
+      const dtDocList = document.getElementById('dtDocList');
+      const dtDocEmpty = document.getElementById('dtDocEmpty');
+      const dtDocNoteWrap = document.getElementById('dtDocNoteWrap');
+      const dtDocNote = document.getElementById('dtDocNote');
 
-            // Dokumen
-            dtDocList.innerHTML = '';
-            const docs = data.docs || {};
-            let total = 0;
-            Object.keys(docs).forEach(grp => {
-              const arr = Array.isArray(docs[grp]) ? docs[grp] : [];
-              arr.forEach(doc => {
-                let fileUrl = '',
-                  fileName = '-';
-                if (typeof doc === 'string') {
-                  fileUrl = normalizeStorageUrl(doc);
-                  fileName = doc.split('/').filter(Boolean).pop() || 'Dokumen';
-                } else {
-                  fileUrl = normalizeStorageUrl(doc.url || doc.path || '');
-                  fileName = doc.name || doc.label || (fileUrl.split('/').filter(Boolean).pop() || 'Dokumen');
-                }
-                total++;
-                const card = document.createElement('div');
-                card.className = 'dt-doc-card';
-                card.innerHTML = `
-          <div class="dt-doc-ic"><i class="bi bi-file-earmark-text"></i></div>
-          <div class="dt-doc-info">
-            <div class="dt-doc-title">${grp||'Dokumen'}</div>
-            <div class="dt-doc-sub">${fileName}</div>
-          </div>
-          <a class="dt-doc-act" href="${fileUrl}" target="_blank" rel="noopener"><i class="bi bi-eye"></i></a>
-        `;
-                dtDocList.appendChild(card);
-              });
-            });
-            dtDocEmpty.hidden = total > 0;
-            const note = (data.docnote || '').trim();
-            dtDocNoteWrap.hidden = !note;
-            if (note) dtDocNote.textContent = note;
+      function normalizeStorageUrl(path) {
+        if (!path) return '#';
+        let s = String(path).trim().replace(/\\/g, '/');
+        if (s.startsWith('http') || s.startsWith('/storage/')) return s;
+        return '/storage/' + s.replace(/^\/+/, '');
+      }
 
-            dtModal.classList.add('is-open');
-            dtModal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-          }
+      function openDetail(data) {
+        dtTitle.textContent = data.title || '-';
+        dtUnit.textContent = data.unit || '-';
+        dtTahun.textContent = data.tahun || '-';
+        dtIdRup.textContent = data.idrup || '-';
+        dtRekanan.textContent = data.rekanan || '-';
+        dtJenis.textContent = data.jenis || '-';
+        dtMetode.textContent = data.metode || '-';
+        dtPagu.textContent = data.pagu || '-';
+        dtHps.textContent = data.hps || '-';
+        dtKontrak.textContent = data.kontrak || '-';
 
-          function closeDetail() {
-            dtModal.classList.remove('is-open');
-            dtModal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-          }
+        // Badge status
+        const badge = document.getElementById('dtStatusBadge');
+        if (badge) {
+          const sp = (data.status || '').toLowerCase().trim();
+          badge.textContent = data.status || '';
+          badge.className = 'dt-status-badge';
+          if (sp === 'perencanaan') badge.classList.add('sp-plan');
+          else if (sp === 'pemilihan') badge.classList.add('sp-select');
+          else if (sp === 'pelaksanaan') badge.classList.add('sp-do');
+          else if (sp === 'selesai') badge.classList.add('sp-done');
+          badge.hidden = !data.status;
+        }
 
-          document.querySelectorAll('.js-open-detail').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-              e.preventDefault();
-              let docs = {};
-              try {
-                docs = JSON.parse(btn.getAttribute('data-docs') || '{}');
-              } catch (_) {}
-              openDetail({
-                title: btn.dataset.title,
-                unit: btn.dataset.unit,
-                tahun: btn.dataset.tahun,
-                idrup: btn.dataset.idrup,
-                status: btn.dataset.status,
-                rekanan: btn.dataset.rekanan,
-                jenis: btn.dataset.jenis,
-                metode: btn.dataset.metode,
-                pagu: btn.dataset.pagu,
-                hps: btn.dataset.hps,
-                kontrak: btn.dataset.kontrak,
-                docnote: btn.dataset.docnote,
-                docs,
-              });
-            });
-          });
+        // Dokumen
+        dtDocList.innerHTML = '';
 
-          dtCloseBtn?.addEventListener('click', closeDetail);
-          dtModal?.addEventListener('click', e => {
-            if (e.target?.dataset?.close === 'true') closeDetail();
-          });
+        const docs = data.docs || {};
 
-          /* Delete Modal */
-          let pendingIds = [];
+        let total = 0;
 
-          function openConfirm(ids) {
-            pendingIds = ids.slice();
-            cfModal.classList.add('is-open');
-            cfModal.setAttribute('aria-hidden', 'false');
-          }
+        Object.keys(docs).forEach(grp => {
 
-          function closeConfirm() {
-            cfModal.classList.remove('is-open');
-            cfModal.setAttribute('aria-hidden', 'true');
-            pendingIds = [];
-          }
+          const arr = Array.isArray(docs[grp]) ? docs[grp] : [];
 
-          const DELETE_URL_TEMPLATE = window.deleteUrlTemplate;
+          arr.forEach(doc => {
 
-          async function deleteOne(id) {
-            const url = DELETE_URL_TEMPLATE.replace('__ID__', id);
-            const res = await fetch(url, {
-              method: 'DELETE',
-              headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+            let viewUrl = '',
+              dlUrl = '',
+              fileName = '-',
+              docLabel = grp || 'Dokumen';
+
+            if (typeof doc === 'string') {
+
+              // fallback: raw path string
+              const storageUrl = normalizeStorageUrl(doc);
+
+              viewUrl = storageUrl;
+              dlUrl = storageUrl;
+
+              fileName = doc.split('/').filter(Boolean).pop() || 'Dokumen';
+
+            } else {
+
+              // buildDokumenList returns: { label, name, path, url }
+
+              docLabel = doc.label || grp || 'Dokumen';
+
+              fileName = doc.name || '-';
+
+              viewUrl = doc.url || normalizeStorageUrl(doc.path || '');
+
+              // ✅ FIX DOWNLOAD PPK
+              if (doc.path && data.id) {
+
+                const cleanPath = String(doc.path)
+                  .replace(/^\/+/, '');
+
+                dlUrl =
+                  `/ppk/arsip/${data.id}/dokumen-download` +
+                  `?field=${encodeURIComponent(grp)}` +
+                  `&path=${encodeURIComponent(cleanPath)}`;
+
+              } else {
+
+                dlUrl = doc.url || '#';
+
               }
-            });
-            if (!res.ok) throw new Error('Gagal menghapus arsip ID ' + id);
-          }
+            }
 
-          async function runDelete(ids) {
-            try {
-              for (const id of ids) await deleteOne(id);
-              window.location.href = window.location.pathname + '?deleted=1';
-            } catch (err) {
-              alert(err?.message || 'Gagal menghapus arsip.');
-            }
-          }
+            total++;
 
-          document.querySelectorAll('.js-single-delete').forEach(btn => {
-            btn.addEventListener('click', () => openConfirm([btn.dataset.id]));
-          });
-          cfCancelBtn?.addEventListener('click', closeConfirm);
-          cfCloseBtn?.addEventListener('click', closeConfirm);
-          cfModal?.addEventListener('click', e => {
-            if (e.target?.dataset?.close === 'true') closeConfirm();
-          });
-          cfConfirmBtn?.addEventListener('click', async () => {
-            const ids = pendingIds.slice();
-            if (ids.length === 0) return;
-            await runDelete(ids);
-          });
+            const card = document.createElement('div');
 
-          /* Export Excel */
-          const lastPage = Number(window.lastPageValue);
-          async function fetchRowsFromPage(page) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('page', page);
-            const text = await fetch(url.toString()).then(r => r.text());
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
-            return Array.from(doc.querySelectorAll('.ap-tbl-row')).map(row => {
-              const btn = row.querySelector('.js-open-detail');
-              return {
-                "Nama Pekerjaan": row.querySelector('.ap-col-job')?.textContent?.trim() || '-',
-                "Unit Kerja": row.querySelector('.ap-col-unit')?.textContent?.trim() || '-',
-                "Tahun Anggaran": row.querySelector('.ap-col-tahun')?.textContent?.trim() || '-',
-                "Metode PBJ": btn?.dataset?.metode || '-',
-                "ID RUP": btn?.dataset?.idrup || '-',
-                "Status Pekerjaan": btn?.dataset?.status || '-',
-                "Nama Rekanan": btn?.dataset?.rekanan || '-',
-                "Jenis Pengadaan": btn?.dataset?.jenis || '-',
-                "Pagu Anggaran": btn?.dataset?.pagu || '-',
-                "HPS": btn?.dataset?.hps || '-',
-                "Nilai Kontrak": btn?.dataset?.kontrak || '-',
-                "Dok. Tidak Dipersyaratkan": btn?.dataset?.docnote || '-',
-              };
-            });
-          }
-          async function exportToExcel() {
-            if (typeof XLSX === 'undefined') {
-              alert('Library Excel belum termuat.');
-              return;
-            }
-            let all = [];
-            for (let p = 1; p <= (Number(lastPage) || 1); p++) {
-              all = all.concat(await fetchRowsFromPage(p));
-            }
-            if (all.length === 0) {
-              alert('Tidak ada data untuk diexport.');
-              return;
-            }
-            const ws = XLSX.utils.json_to_sheet(all);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Arsip PBJ');
-            const now = new Date(),
-              pad = n => String(n).padStart(2, '0');
-            const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-            XLSX.writeFile(wb, `Arsip_PBJ_${stamp}.xlsx`);
-          }
-          document.getElementById('apExportBtn')?.addEventListener('click', async function() {
-            try {
-              this.disabled = true;
-              await exportToExcel();
-            } catch (err) {
-              alert(err?.message || 'Export gagal.');
-            } finally {
-              this.disabled = false;
-            }
+            card.className = 'dt-doc-card';
+
+            card.innerHTML = `
+
+      <div class="dt-doc-ic">
+        <i class="bi bi-file-earmark-text"></i>
+      </div>
+
+      <div class="dt-doc-info">
+        <div class="dt-doc-title">${docLabel}</div>
+        <div class="dt-doc-sub">${fileName}</div>
+      </div>
+
+      <div class="dt-doc-acts">
+
+        <a class="dt-doc-act dt-doc-act-view"
+           href="${viewUrl}"
+           target="_blank"
+           rel="noopener"
+           title="Lihat dokumen">
+
+          <i class="bi bi-eye"></i>
+
+        </a>
+
+        <a class="dt-doc-act dt-doc-act-dl"
+           href="${dlUrl}"
+           download
+           target="_self"
+           title="Unduh dokumen">
+
+          <i class="bi bi-download"></i>
+
+        </a>
+
+      </div>
+    `;
+
+            dtDocList.appendChild(card);
+
           });
 
-          /* =========================
-   HISTORI AKTIVITAS
-========================= */
+        });
 
-          const histOverlay = document.getElementById('histOverlay');
-          const histBackBtn = document.getElementById('histBackBtn');
-          const histTableBody = document.getElementById('histTableBody');
-          const histLoading = document.getElementById('histLoading');
-          const histEmpty = document.getElementById('histEmpty');
-          const histExportBtn = document.getElementById('histExportBtn');
+        dtDocEmpty.hidden = total > 0;
+        dtDocEmpty.hidden = total > 0;
+        const note = (data.docnote || '').trim();
+        dtDocNoteWrap.hidden = !note;
+        if (note) dtDocNote.textContent = note;
 
-          let histData = [];
+        dtModal.classList.add('is-open');
+        dtModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
 
-          function openHistori() {
-            histOverlay.classList.add('is-open');
-            histOverlay.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
+      function closeDetail() {
+        dtModal.classList.remove('is-open');
+        dtModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
 
-            loadHistori();
-          }
-
-          function closeHistori() {
-            histOverlay.classList.remove('is-open');
-            histOverlay.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-          }
-
-          async function loadHistori() {
-
-            histLoading.hidden = false;
-            histEmpty.hidden = true;
-
-            histTableBody
-              .querySelectorAll('.hist-tbl-row')
-              .forEach(el => el.remove());
-
-            try {
-
-              const res = await fetch("{{ route('unit.histori') }}", {
-                headers: {
-                  'Accept': 'application/json',
-                  'X-Requested-With': 'XMLHttpRequest'
-                }
-              });
-
-              if (!res.ok) {
-                throw new Error('Gagal mengambil histori');
-              }
-
-              const json = await res.json();
-
-              histData = json.data || [];
-
-              histLoading.hidden = true;
-
-              if (histData.length === 0) {
-                histEmpty.hidden = false;
-                return;
-              }
-
-              renderHistoriRows(histData);
-
-            } catch (err) {
-
-              console.error(err);
-
-              histLoading.hidden = true;
-              histEmpty.hidden = false;
-              histEmpty.textContent = 'Gagal memuat histori aktivitas.';
-            }
-          }
-
-          function renderHistoriRows(rows) {
-
-            rows.forEach(item => {
-
-              const row = document.createElement('div');
-
-              row.className = 'hist-tbl-row';
-
-              row.innerHTML = `
-            <div class="hist-col">${item.waktu ?? '-'}</div>
-            <div class="hist-col">${item.nama_akun ?? '-'}</div>
-            <div class="hist-col">${item.role ?? '-'}</div>
-            <div class="hist-col">${item.unit_kerja ?? '-'}</div>
-            <div class="hist-col">${item.aktivitas ?? '-'}</div>
-        `;
-
-              histTableBody.appendChild(row);
-            });
-          }
-
-          /* OPEN BUTTON */
-          document.getElementById('apHistoriBtn')
-            ?.addEventListener('click', openHistori);
-
-          /* CLOSE */
-          histBackBtn?.addEventListener('click', closeHistori);
-
-          document.getElementById('histBackdrop')
-            ?.addEventListener('click', closeHistori);
-
-          /* EXPORT EXCEL */
-          histExportBtn?.addEventListener('click', () => {
-
-            if (typeof XLSX === 'undefined') {
-              alert('Library Excel belum dimuat');
-              return;
-            }
-
-            if (!histData.length) {
-              alert('Tidak ada data histori');
-              return;
-            }
-
-            const ws = XLSX.utils.json_to_sheet(histData);
-
-            const wb = XLSX.utils.book_new();
-
-            XLSX.utils.book_append_sheet(
-              wb,
-              ws,
-              'Histori Aktivitas'
-            );
-
-            XLSX.writeFile(
-              wb,
-              'Histori_Aktivitas.xlsx'
-            );
+      document.querySelectorAll('.js-open-detail').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          let docs = {};
+          try {
+            docs = JSON.parse(btn.getAttribute('data-docs') || '{}');
+          } catch (_) {}
+          openDetail({
+            id: btn.dataset.id,
+            title: btn.dataset.title,
+            unit: btn.dataset.unit,
+            tahun: btn.dataset.tahun,
+            idrup: btn.dataset.idrup,
+            status: btn.dataset.status,
+            rekanan: btn.dataset.rekanan,
+            jenis: btn.dataset.jenis,
+            metode: btn.dataset.metode,
+            pagu: btn.dataset.pagu,
+            hps: btn.dataset.hps,
+            kontrak: btn.dataset.kontrak,
+            docnote: btn.dataset.docnote,
+            docs,
           });
+        });
+      });
+
+      dtCloseBtn?.addEventListener('click', closeDetail);
+      dtModal?.addEventListener('click', e => {
+        if (e.target?.dataset?.close === 'true') closeDetail();
+      });
+
+      /* -------- Delete Modal -------- */
+      const cfModal = document.getElementById('cfModal');
+      const cfCancelBtn = document.getElementById('cfCancelBtn');
+      const cfCloseBtn = document.getElementById('cfCloseBtn');
+      const cfConfirmBtn = document.getElementById('cfConfirmBtn');
+
+      let pendingIds = [];
+
+      function openConfirm(ids) {
+        pendingIds = ids.slice();
+        cfModal.classList.add('is-open');
+        cfModal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeConfirm() {
+        cfModal.classList.remove('is-open');
+        cfModal.setAttribute('aria-hidden', 'true');
+        pendingIds = [];
+      }
+
+      async function deleteOne(id) {
+        const res = await fetch(`/ppk/arsip/${encodeURIComponent(id)}/delete`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRF-TOKEN': csrf,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+        });
+        if (!res.ok) throw new Error('Gagal menghapus arsip ID ' + id);
+      }
+
+      async function runDelete(ids) {
+        try {
+          for (const id of ids) await deleteOne(id);
+          window.location.href = window.location.pathname + '?deleted=1';
+        } catch (err) {
+          alert(err?.message || 'Gagal menghapus arsip.');
+        }
+      }
+
+      document.querySelectorAll('.js-single-delete').forEach(btn => {
+        btn.addEventListener('click', () => openConfirm([btn.dataset.id]));
+      });
+      cfCancelBtn?.addEventListener('click', closeConfirm);
+      cfCloseBtn?.addEventListener('click', closeConfirm);
+      cfModal?.addEventListener('click', e => {
+        if (e.target?.dataset?.close === 'true') closeConfirm();
+      });
+      cfConfirmBtn?.addEventListener('click', async () => {
+        const ids = pendingIds.slice();
+        if (ids.length) await runDelete(ids);
+      });
+
+      /* -------- ESC key -------- */
+      document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        if (dtModal?.classList.contains('is-open')) closeDetail();
+        if (cfModal?.classList.contains('is-open')) closeConfirm();
+        closeHistori();
+      });
+      /* -------- Export Excel -------- */
+
+      async function fetchRowsFromPage(page) {
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+
+        const text = await fetch(url.toString()).then(r => r.text());
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+
+        return Array.from(doc.querySelectorAll('.ap-tbl-row')).map(row => {
+
+          const btn = row.querySelector('.js-open-detail');
+
+          return {
+            'Nama Pekerjaan': row.querySelector('.ap-col-job')?.textContent?.trim() || '-',
+            'Unit Kerja': row.querySelector('.ap-col-unit')?.textContent?.trim() || '-',
+            'Tahun Anggaran': row.querySelector('.ap-col-tahun')?.textContent?.trim() || '-',
+            'Metode PBJ': btn?.dataset?.metode || '-',
+            'ID RUP': btn?.dataset?.idrup || '-',
+            'Status Pekerjaan': btn?.dataset?.status || '-',
+            'Nama Rekanan': btn?.dataset?.rekanan || '-',
+            'Jenis Pengadaan': btn?.dataset?.jenis || '-',
+            'Pagu Anggaran': btn?.dataset?.pagu || '-',
+            'HPS': btn?.dataset?.hps || '-',
+            'Nilai Kontrak': btn?.dataset?.kontrak || '-',
+            'Dok. Tidak Dipersyaratkan': btn?.dataset?.docnote || '-',
+          };
+        });
+      }
+
+      async function exportToExcel() {
+
+        try {
+
+          if (typeof XLSX === 'undefined') {
+            alert('Library Excel belum termuat.');
+            return;
+          }
+
+          let all = [];
+
+          for (let p = 1; p <= (Number(lastPage) || 1); p++) {
+
+            const rows = await fetchRowsFromPage(p);
+
+            all = all.concat(rows);
+          }
+
+          if (all.length === 0) {
+            alert('Tidak ada data.');
+            return;
+          }
+
+          const ws = XLSX.utils.json_to_sheet(all);
+
+          const wb = XLSX.utils.book_new();
+
+          XLSX.utils.book_append_sheet(
+            wb,
+            ws,
+            'Arsip PBJ'
+          );
+
+          XLSX.writeFile(
+            wb,
+            `Arsip_PBJ_${new Date().toISOString().slice(0,10)}.xlsx`
+          );
+
+        } catch (err) {
+
+          console.error(err);
+
+          alert('Gagal export Excel.');
+        }
+      }
+
+      printBtn?.addEventListener('click', exportToExcel);
+
+
+      /* -------- HISTORI AKTIVITAS -------- */
+
+      const histOverlay = document.getElementById('histOverlay');
+      const histBtn = document.getElementById('apHistoryBtn');
+      const histBackBtn = document.getElementById('histBackBtn');
+      const histBackdrop = document.getElementById('histBackdrop');
+      const histTableBody = document.getElementById('histTableBody');
+      const histLoading = document.getElementById('histLoading');
+      const histEmpty = document.getElementById('histEmpty');
+      const histExportBtn = document.getElementById('histExportBtn');
+
+      let historiLoaded = false;
+      let historiData = [];
+
+      async function loadHistori() {
+        try {
+          if (histLoading) histLoading.hidden = false;
+          if (histEmpty) histEmpty.hidden = true;
+
+          const res = await fetch("{{ route('ppk.histori') }}", {
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!res.ok) throw new Error('Gagal mengambil histori');
+
+          const data = await res.json();
+          historiData = Array.isArray(data) ? data : [];
+
+          if (histLoading) histLoading.hidden = true;
+
+          document.querySelectorAll('.hist-tbl-row').forEach(el => el.remove());
+
+          if (historiData.length === 0) {
+            if (histEmpty) histEmpty.hidden = false;
+            return;
+          }
+
+          historiData.forEach(item => {
+            // Untuk PPK, kolom unit bisa '-'. Coba ekstrak dari deskripsi log
+            // contoh deskripsi: "PPK menambahkan pengadaan: XXX (Unit: Badan Pengelola Keuangan)"
+            let unitDisplay = item.unit || '-';
+            if (unitDisplay === '-' && item.aktivitas) {
+              const match = item.aktivitas.match(/\(Unit:\s*([^)]+)\)/);
+              if (match) unitDisplay = match[1].trim();
+            }
+
+            const row = document.createElement('div');
+            row.className = 'hist-tbl-row';
+            row.innerHTML = `
+                            <div class="hist-col">${item.waktu || '-'}</div>
+                            <div class="hist-col">${item.nama || '-'}</div>
+                            <div class="hist-col">${item.role || '-'}</div>
+                            <div class="hist-col">${unitDisplay}</div>
+                            <div class="hist-col">${item.aktivitas || '-'}</div>
+                        `;
+            histTableBody.appendChild(row);
+          });
+
+          historiLoaded = true;
+
+        } catch (err) {
+          console.error(err);
+          if (histLoading) histLoading.hidden = true;
+          if (histEmpty) {
+            histEmpty.hidden = false;
+            histEmpty.textContent = 'Gagal memuat histori aktivitas.';
+          }
+        }
+      }
+
+      function openHistori() {
+        histOverlay?.classList.add('is-open');
+        histOverlay?.setAttribute('aria-hidden', 'false');
+        if (!historiLoaded) loadHistori();
+      }
+
+      function closeHistori() {
+        histOverlay?.classList.remove('is-open');
+        histOverlay?.setAttribute('aria-hidden', 'true');
+      }
+
+      histBtn?.addEventListener('click', openHistori);
+      histBackBtn?.addEventListener('click', closeHistori);
+      histBackdrop?.addEventListener('click', closeHistori);
+
+      histExportBtn?.addEventListener('click', function() {
+        if (typeof XLSX === 'undefined') {
+          alert('Library Excel belum termuat.');
+          return;
+        }
+        if (!historiData.length) {
+          alert('Data histori kosong.');
+          return;
+        }
+
+        const ws = XLSX.utils.json_to_sheet(historiData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Histori Aktivitas');
+        XLSX.writeFile(wb, `Histori_Aktivitas_${new Date().toISOString().slice(0,10)}.xlsx`);
+      });
+
+    });
   </script>
   @include('Partials.chatbot')
+
 </body>
 
 </html>
